@@ -37,6 +37,7 @@ class LinkedList(Generic[T]):
             case None, None:
                 self.head = item
                 self.tail = item
+                self.size += 1
                 # TODO: incorrectly initialized linked list
             case _, None:
                 pass
@@ -46,6 +47,7 @@ class LinkedList(Generic[T]):
                 self.tail.next = item
                 item.prev = self.tail
                 self.tail = item
+                self.size += 1
 
     def print_all_nodes(self) -> None:
         for node in self:
@@ -77,11 +79,14 @@ class LinkedList(Generic[T]):
                     if (nodePrev := node.prev) and (nodeNext := node.next):
                         nodePrev.next = nodeNext
                         nodeNext.prev = nodePrev
+            self.size -= 1
             if all is False:
                 return
 
     def clean(self) -> None:
-        pass
+        self.head = None
+        self.tail = None
+        self.size = 0
 
     def len(self) -> int:
         return self.size

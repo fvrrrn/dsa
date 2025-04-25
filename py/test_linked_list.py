@@ -29,12 +29,12 @@ class TestLinkedList(unittest.TestCase):
         ll.add_in_tail(Node(5))
         self.assertIsNone(ll.find(99))
 
-    # def test_len(self):
-    #     ll = LinkedList()
-    #     self.assertEqual(ll.len(), 0)
-    #     ll.add_in_tail(Node(1))
-    #     ll.add_in_tail(Node(2))
-    #     self.assertEqual(ll.len(), 2)
+    def test_len(self):
+        ll = LinkedList()
+        self.assertEqual(ll.len(), 0)
+        ll.add_in_tail(Node(1))
+        ll.add_in_tail(Node(2))
+        self.assertEqual(ll.len(), 2)
 
     # def test_clean(self):
     #     ll = LinkedList()
@@ -44,6 +44,7 @@ class TestLinkedList(unittest.TestCase):
     #     self.assertIsNone(ll.head)
     #     self.assertIsNone(ll.tail)
     #     self.assertEqual(ll.len(), 0)
+
     def test_delete_only_node(self):
         ll = LinkedList[int]()
         node = Node(10)
