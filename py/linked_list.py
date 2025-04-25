@@ -1,5 +1,6 @@
-from typing import Generic, List, Optional, Protocol, TypeVar
+from typing import Generic, List, Optional, Protocol, TypeGuard, TypeVar, cast
 
+# TODO: check if Python supports something like `where T is IComparable`
 # class Equalable(Protocol):
 #     def __eq__(self, other: object) -> bool:
 #         ...
@@ -19,6 +20,7 @@ class Node(Generic[T]):
 
 class LinkedList(Generic[T]):
     def __init__(self) -> None:
+        # TODO: make fields read-only
         self.head: Optional[Node[T]] = None
         self.tail: Optional[Node[T]] = None
         self.size = 0
@@ -38,7 +40,6 @@ class LinkedList(Generic[T]):
                 self.head = item
                 self.tail = item
                 self.size += 1
-                # TODO: incorrectly initialized linked list
             case _, None:
                 pass
             case None, _:
@@ -92,4 +93,54 @@ class LinkedList(Generic[T]):
         return self.size
 
     def insert(self, afterNode: Optional[Node[T]], newNode: Node[T]) -> None:
-        pass
+        match self.head, self.tail, afterNode:
+            case None, None, None:
+                self.add_in_tail(newNode)
+            case None, _, _:
+                pass
+            case _, None, _:
+                pass
+            case _, _, None:
+                self.head.prev = newNode
+                newNode.next = self.head
+                self.head = newNode
+            case _, _, _:
+                # TypeGuard does not work with match-case
+                if is_tail(afterNode):
+                    afterNode.next = newNode
+                    newNode.prev = cast(Node[T], afterNode)
+                    self.size += 1
+                    self.tail = newNode
+                elif is_head(afterNode) or is_middle(afterNode):
+                    afterNode.next.prev = newNode
+                    newNode.next = afterNode.next
+                    afterNode.next = newNode
+                    newNode.prev = cast(Node[T], afterNode)
+                    self.size += 1
+
+
+class HasNext(Protocol, Generic[T]):
+    prev: Optional[Node[T]]
+    next: Node[T]
+
+
+class HasPrev(Protocol, Generic[T]):
+    prev: Node[T]
+    next: Optional[Node[T]]
+
+
+class HasPrevNext(Protocol, Generic[T]):
+    prev: Node[T]
+    next: Node[T]
+
+
+def is_head(node: Node[T]) -> TypeGuard[HasNext[T]]:
+    return node.prev is None
+
+
+def is_tail(node: Node[T]) -> TypeGuard[HasPrev[T]]:
+    return node.next is None
+
+
+def is_middle(node: Node[T]) -> TypeGuard[HasPrevNext[T]]:
+    return node.prev is not None and node.next is not None
