@@ -1,14 +1,11 @@
-from typing import Generic, List, Optional, Protocol, TypeGuard, TypeVar, cast
+from typing import Generic, Iterator, List, Optional, Protocol, TypeGuard, TypeVar, cast
 
-# TODO: check if Python supports something like `where T is IComparable`
-# class Equalable(Protocol):
-#     def __eq__(self, other: object) -> bool:
-#         ...
-#     def __ne__(self, other: object) -> bool:
-#         ...
 
-# T = TypeVar("T", bound=Equalable)
-T = TypeVar("T")
+class Equalable(Protocol):
+    def __eq__(self, other: object, /) -> bool: ...
+
+
+T = TypeVar("T", bound=Equalable)
 
 
 class Node(Generic[T]):
@@ -20,12 +17,12 @@ class Node(Generic[T]):
 
 class LinkedList(Generic[T]):
     def __init__(self) -> None:
-        # TODO: make fields read-only
+        # TODO: make fields read-only so that there won't be erroneous states
         self.head: Optional[Node[T]] = None
         self.tail: Optional[Node[T]] = None
         self.size = 0
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Node[T]]:
         node = self.head
         while node is not None:
             yield node
@@ -33,6 +30,9 @@ class LinkedList(Generic[T]):
 
     def __len__(self):
         return self.size
+
+    def __str__(self):
+        return " -> ".join(str(node.value) for node in self)
 
     def add_in_tail(self, item: Node[T]) -> None:
         match self.head, self.tail:
@@ -104,6 +104,7 @@ class LinkedList(Generic[T]):
                 self.head.prev = newNode
                 newNode.next = self.head
                 self.head = newNode
+                self.size += 1
             case _, _, _:
                 # TypeGuard does not work with match-case
                 if is_tail(afterNode):

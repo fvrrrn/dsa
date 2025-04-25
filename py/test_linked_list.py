@@ -13,7 +13,9 @@ class TestLinkedList(unittest.TestCase):
         ll.add_in_tail(node2)
         self.assertEqual(ll.head, node1)
         self.assertEqual(ll.tail, node2)
-        # self.assertEqual(ll.head.next, node2)
+        # will not ever throw
+        assert ll.head is not None
+        self.assertEqual(ll.head.next, node2)
 
     def test_find(self):
         ll = LinkedList()
@@ -142,7 +144,9 @@ class TestLinkedList(unittest.TestCase):
         self.assertEqual(ll.head, node2)
         self.assertEqual(node2.next, node1)
         self.assertEqual(node1.prev, node2)
+        self.assertEqual(ll.tail, node1)
         self.assertIsNone(node2.prev)
+        self.assertEqual(ll.len(), 2)
 
     def test_insert_after_head(self):
         ll = LinkedList[int]()
@@ -153,6 +157,7 @@ class TestLinkedList(unittest.TestCase):
         self.assertEqual(node1.next, node2)
         self.assertEqual(node2.prev, node1)
         self.assertEqual(ll.tail, node2)
+        self.assertEqual(ll.head, node1)
 
     def test_insert_in_middle(self):
         ll = LinkedList[int]()
@@ -173,10 +178,32 @@ class TestLinkedList(unittest.TestCase):
         ll.add_in_tail(node1)
         node2 = Node(2)
         ll.insert(node1, node2)
+        self.assertEqual(ll.head, node1)
         self.assertEqual(ll.tail, node2)
         self.assertEqual(node1.next, node2)
         self.assertEqual(node2.prev, node1)
         self.assertIsNone(node2.next)
+        print(ll)
+
+    def test_insert_middle(self):
+        ll = LinkedList[str]()
+        a1 = Node("a1")
+        a2 = Node("a2")
+        a3 = Node("a3")
+        a4 = Node("a4")
+        a5 = Node("a5")
+        a7 = Node("a7")
+
+        ll.add_in_tail(a1)
+        ll.add_in_tail(a2)
+        ll.add_in_tail(a3)
+        ll.add_in_tail(a4)
+        ll.add_in_tail(a5)
+
+        ll.insert(a3, a7)
+
+        values = [node.value for node in ll]
+        self.assertEqual(values, ["a1", "a2", "a3", "a7", "a4", "a5"])
 
 
 if __name__ == "__main__":
