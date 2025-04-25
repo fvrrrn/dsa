@@ -58,16 +58,9 @@ class LinkedList(Generic[T]):
         return [node for node in self if node.value == val]
 
     def delete(self, val: T, all: bool = False) -> None:
-        deleted: List[T] = []
         for node in self.find_all(val):
             if self.head is None or self.tail is None:
                 break
-
-            if all is False and node.value in deleted:
-                continue
-            else:
-                deleted.append(node.value)
-
             match node == self.head, node == self.tail:
                 case True, True:
                     self.head = None
@@ -84,6 +77,8 @@ class LinkedList(Generic[T]):
                     if (nodePrev := node.prev) and (nodeNext := node.next):
                         nodePrev.next = nodeNext
                         nodeNext.prev = nodePrev
+            if all is False:
+                return
 
     def clean(self) -> None:
         pass
