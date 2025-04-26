@@ -34,6 +34,22 @@ class LinkedList(Generic[T]):
     def __str__(self):
         return " -> ".join(str(node.value) for node in self)
 
+    def add_in_head(self, item: Node[T]) -> None:
+        match self.head, self.tail:
+            case None, None:
+                self.head = item
+                self.tail = item
+                self.size += 1
+            case _, None:
+                pass
+            case None, _:
+                pass
+            case _, _:
+                item.next = self.head
+                self.head.prev = item
+                self.head = item
+                self.size += 1
+
     def add_in_tail(self, item: Node[T]) -> None:
         match self.head, self.tail:
             case None, None:

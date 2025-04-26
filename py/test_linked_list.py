@@ -205,6 +205,51 @@ class TestLinkedList(unittest.TestCase):
         values = [node.value for node in ll]
         self.assertEqual(values, ["a1", "a2", "a3", "a7", "a4", "a5"])
 
+    def test_add_in_head_empty_list(self):
+        ll = LinkedList[int]()
+        node = Node(1)
+        ll.add_in_head(node)
+        self.assertIs(ll.head, node)
+        self.assertIs(ll.tail, node)
+        self.assertEqual(ll.size, 1)
+        self.assertIsNone(node.prev)
+        self.assertIsNone(node.next)
+
+    def test_add_in_head_single_node_list(self):
+        ll = LinkedList[int]()
+        first = Node(1)
+        ll.add_in_tail(first)
+
+        second = Node(0)
+        ll.add_in_head(second)
+
+        self.assertIs(ll.head, second)
+        self.assertIs(ll.tail, first)
+        self.assertEqual(ll.size, 2)
+        self.assertIs(second.next, first)
+        self.assertIsNone(second.prev)
+        self.assertIs(first.prev, second)
+        self.assertIsNone(first.next)
+
+    def test_add_in_head_multiple_nodes_list(self):
+        ll = LinkedList[int]()
+        first = Node(2)
+        second = Node(3)
+        ll.add_in_tail(first)
+        ll.add_in_tail(second)
+
+        new_head = Node(1)
+        ll.add_in_head(new_head)
+
+        self.assertIs(ll.head, new_head)
+        self.assertEqual(ll.size, 3)
+        self.assertIs(new_head.next, first)
+        self.assertIsNone(new_head.prev)
+        self.assertIs(first.prev, new_head)
+        self.assertIs(first.next, second)
+        self.assertIs(second.prev, first)
+        self.assertIsNone(second.next)
+
 
 if __name__ == "__main__":
     unittest.main()
