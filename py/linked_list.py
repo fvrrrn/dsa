@@ -117,9 +117,9 @@ class LinkedList(Generic[T]):
             case _, None, _:
                 pass
             case _, _, None:
-                self.head.prev = newNode
-                newNode.next = self.head
-                self.head = newNode
+                self.tail.next = newNode
+                newNode.prev = self.tail
+                self.tail = newNode
                 self.size += 1
             case _, _, _:
                 # TypeGuard does not work with match-case

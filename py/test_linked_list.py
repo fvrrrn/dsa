@@ -141,11 +141,11 @@ class TestLinkedList(unittest.TestCase):
         ll.add_in_tail(node1)
         node2 = Node(2)
         ll.insert(None, node2)
-        self.assertEqual(ll.head, node2)
-        self.assertEqual(node2.next, node1)
-        self.assertEqual(node1.prev, node2)
-        self.assertEqual(ll.tail, node1)
-        self.assertIsNone(node2.prev)
+        self.assertEqual(ll.tail, node2)
+        self.assertEqual(node2.prev, node1)
+        self.assertEqual(node1.next, node2)
+        self.assertEqual(ll.head, node1)
+        self.assertIsNone(node2.next)
         self.assertEqual(ll.len(), 2)
 
     def test_insert_after_head(self):
