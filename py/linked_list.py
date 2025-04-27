@@ -1,4 +1,5 @@
 import threading
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from typing import (
     Generic,
     Iterator,
@@ -22,6 +23,36 @@ class Node(Generic[T]):
         self.value: T = v
         self.next: Optional[Node[T]] = None
         self.prev: Optional[Node[T]] = None
+
+
+class HasNext(Protocol, Generic[T]):
+    value: T
+    prev: Optional[Node[T]]
+    next: Node[T]
+
+
+class HasPrev(Protocol, Generic[T]):
+    value: T
+    prev: Node[T]
+    next: Optional[Node[T]]
+
+
+class HasPrevNext(Protocol, Generic[T]):
+    value: T
+    prev: Node[T]
+    next: Node[T]
+
+
+def is_head(node: Node[T]) -> TypeGuard[HasNext[T]]:
+    return node.prev is None
+
+
+def is_tail(node: Node[T]) -> TypeGuard[HasPrev[T]]:
+    return node.next is None
+
+
+def is_middle(node: Node[T]) -> TypeGuard[HasPrevNext[T]]:
+    return node.prev is not None and node.next is not None
 
 
 class LinkedList(Generic[T]):
@@ -168,35 +199,24 @@ class LinkedList(Generic[T]):
                     self.size += 1
 
 
-def _partition(low: Node[T], high: Node[T]) -> Node[T]:
-    # TODO: although each value such as high, low, j and i never None
-    # because they are being used strictly within linked list
-    # so never each assert throws
-    # Python type system provides no way to ensure value is not None without casting or asserting
-    # MiddleNode frozen prev:not optional and next:not optional?
-    # and then case MiddleNode(node):
-    assert high is not None
+def _partition(low: HasNext[T], high: HasPrev[T]) -> Node[T]:
     pivot = high
-    assert low is not None
-    i = low.prev
+    i = cast(HasNext[T], low.prev)
     j = low
 
     while j != high:
-        assert j is not None
         if j.value < pivot.value:
-            i = i.next if i else low
-            assert i is not None
+            i = cast(HasNext[T], i.next) if i else low
             i.value, j.value = j.value, i.value
-        j = j.next
+        j = cast(HasNext[T], j.next)
     i = i.next if i else low
-    assert i is not None
     i.value, pivot.value = pivot.value, i.value
-    return i
+    return cast(Node[T], i)
 
 
 def _threaded_quick_sort_recursive(low: Node[T], high: Node[T]) -> None:
     if low and high and low != high and low != high.next:
-        pivot = _partition(low, high)
+        pivot = _partition(cast(HasNext[T], low), cast(HasPrev[T], high))
         left_thread = threading.Thread(
             target=_threaded_quick_sort_recursive, args=(low, pivot.prev)
         )
@@ -211,6 +231,51 @@ def _threaded_quick_sort_recursive(low: Node[T], high: Node[T]) -> None:
         right_thread.join()
 
 
+def _quick_sort_recursive(low: Node[T], high: Node[T]) -> None:
+    if low and high and low != high and low != high.next:
+        pivot = _partition(cast(HasNext[T], low), cast(HasPrev[T], high))
+        _quick_sort_recursive(low, pivot.prev)  # type: ignore
+        _quick_sort_recursive(pivot.next, high)  # type: ignore
+
+
+def _threaded_quick_sort_recursive_2(
+    low: Node[T], high: Node[T], pool: ThreadPoolExecutor, threshold: int = 10
+) -> None:
+    if low and high and low != high and low != high.next:
+        pivot = _partition(cast(HasNext[T], low), cast(HasPrev[T], high))
+        if _partition_size(low, high) > threshold:
+            futures = [
+                pool.submit(_threaded_quick_sort_recursive_2, low, pivot.prev, pool, threshold),  # type: ignore
+                pool.submit(_threaded_quick_sort_recursive_2, pivot.next, high, pool, threshold),  # type: ignore
+            ]
+
+            for future in as_completed(futures):
+                future.result()
+        else:
+            _threaded_quick_sort_recursive_2(low, pivot.prev, pool, threshold)  # type: ignore
+            _threaded_quick_sort_recursive_2(pivot.next, high, pool, threshold)  # type: ignore
+
+
+def _partition_size(low: Node[T], high: Node[T]) -> int:
+    size = 0
+    current = low
+    while current != high.next:
+        size += 1
+        current = current.next  # type: ignore
+    return size
+
+
+def _parallel_quick_sort_recursive(
+    low: Node[T], high: Node[T], pool: ProcessPoolExecutor
+) -> None:
+    if low and high and low != high and low != high.next:
+        pivot = _partition(cast(HasNext[T], low), cast(HasPrev[T], high))
+        left_task = pool.submit(_parallel_quick_sort_recursive, low, pivot.prev, pool)  # type: ignore
+        right_task = pool.submit(_parallel_quick_sort_recursive, pivot.next, high, pool)  # type: ignore
+        left_task.result()
+        right_task.result()
+
+
 def sort_linked_list(llist: LinkedList[T]) -> LinkedList[T]:
     sorted_list = LinkedList[T]()
     for node in llist:
@@ -223,32 +288,10 @@ def sort_linked_list(llist: LinkedList[T]) -> LinkedList[T]:
         or sorted_list.tail is None
     ):
         return llist
-    _threaded_quick_sort_recursive(sorted_list.head, sorted_list.tail)
+    # _threaded_quick_sort_recursive(sorted_list.head, sorted_list.tail)
+    # with ProcessPoolExecutor() as pool:
+    #     _parallel_quick_sort_recursive(sorted_list.head, sorted_list.tail, pool)
+    with ThreadPoolExecutor() as pool:
+        _threaded_quick_sort_recursive_2(sorted_list.head, sorted_list.tail, pool)
+    # _quick_sort_recursive(sorted_list.head, sorted_list.tail)
     return sorted_list
-
-
-class HasNext(Protocol, Generic[T]):
-    prev: Optional[Node[T]]
-    next: Node[T]
-
-
-class HasPrev(Protocol, Generic[T]):
-    prev: Node[T]
-    next: Optional[Node[T]]
-
-
-class HasPrevNext(Protocol, Generic[T]):
-    prev: Node[T]
-    next: Node[T]
-
-
-def is_head(node: Node[T]) -> TypeGuard[HasNext[T]]:
-    return node.prev is None
-
-
-def is_tail(node: Node[T]) -> TypeGuard[HasPrev[T]]:
-    return node.next is None
-
-
-def is_middle(node: Node[T]) -> TypeGuard[HasPrevNext[T]]:
-    return node.prev is not None and node.next is not None
