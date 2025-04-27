@@ -1,13 +1,20 @@
-from typing import Generic, Iterator, List, Optional, Protocol, TypeGuard, TypeVar, cast
+import threading
+from typing import (
+    Generic,
+    Iterator,
+    List,
+    Optional,
+    Protocol,
+    TypeGuard,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from monads import Just, Maybe, Nothing
+from protocols import Comparable
 
-
-class Equalable(Protocol):
-    def __eq__(self, other: object, /) -> bool: ...
-
-
-T = TypeVar("T", bound=Equalable)
+T = TypeVar("T", bound=Comparable)
 
 
 class Node(Generic[T]):
@@ -18,11 +25,13 @@ class Node(Generic[T]):
 
 
 class LinkedList(Generic[T]):
-    def __init__(self) -> None:
+    def __init__(self, *values: T) -> None:
         # TODO: make fields read-only so that there won't be erroneous states
         self.head: Optional[Node[T]] = None
         self.tail: Optional[Node[T]] = None
         self.size = 0
+        for value in values:
+            self.add_in_tail(value)
 
     def __iter__(self) -> Iterator[Node[T]]:
         node = self.head
@@ -53,7 +62,9 @@ class LinkedList(Generic[T]):
             return Nothing()
         return Just(node)
 
-    def add_in_head(self, item: Node[T]) -> None:
+    def add_in_head(self, item: Union[Node[T], T]) -> None:
+        if not isinstance(item, Node):
+            item = Node(item)
         match self.head, self.tail:
             case None, None:
                 self.head = item
@@ -69,7 +80,9 @@ class LinkedList(Generic[T]):
                 self.head = item
                 self.size += 1
 
-    def add_in_tail(self, item: Node[T]) -> None:
+    def add_in_tail(self, item: Union[Node[T], T]) -> None:
+        if not isinstance(item, Node):
+            item = Node(item)
         match self.head, self.tail:
             case None, None:
                 self.head = item
@@ -153,6 +166,65 @@ class LinkedList(Generic[T]):
                     afterNode.next = newNode
                     newNode.prev = cast(Node[T], afterNode)
                     self.size += 1
+
+
+def _partition(low: Node[T], high: Node[T]) -> Node[T]:
+    # TODO: although each value such as high, low, j and i never None
+    # because they are being used strictly within linked list
+    # so never each assert throws
+    # Python type system provides no way to ensure value is not None without casting or asserting
+    # MiddleNode frozen prev:not optional and next:not optional?
+    # and then case MiddleNode(node):
+    assert high is not None
+    pivot = high
+    assert low is not None
+    i = low.prev
+    j = low
+
+    while j != high:
+        assert j is not None
+        if j.value < pivot.value:
+            i = i.next if i else low
+            assert i is not None
+            i.value, j.value = j.value, i.value
+        j = j.next
+    i = i.next if i else low
+    assert i is not None
+    i.value, pivot.value = pivot.value, i.value
+    return i
+
+
+def _threaded_quick_sort_recursive(low: Node[T], high: Node[T]) -> None:
+    if low and high and low != high and low != high.next:
+        pivot = _partition(low, high)
+        left_thread = threading.Thread(
+            target=_threaded_quick_sort_recursive, args=(low, pivot.prev)
+        )
+        right_thread = threading.Thread(
+            target=_threaded_quick_sort_recursive, args=(pivot.next, high)
+        )
+
+        left_thread.start()
+        right_thread.start()
+
+        left_thread.join()
+        right_thread.join()
+
+
+def sort_linked_list(llist: LinkedList[T]) -> LinkedList[T]:
+    sorted_list = LinkedList[T]()
+    for node in llist:
+        # TODO: if node.value is not a primitive it should be deep-copied
+        sorted_list.add_in_tail(node.value)
+    if (
+        llist.head is None
+        or sorted_list.head is None
+        or llist.tail is None
+        or sorted_list.tail is None
+    ):
+        return llist
+    _threaded_quick_sort_recursive(sorted_list.head, sorted_list.tail)
+    return sorted_list
 
 
 class HasNext(Protocol, Generic[T]):

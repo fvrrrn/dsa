@@ -1,7 +1,7 @@
 import unittest
 from typing import cast
 
-from linked_list import LinkedList, Node
+from linked_list import LinkedList, Node, sort_linked_list
 
 
 class TestLinkedList(unittest.TestCase):
@@ -183,7 +183,6 @@ class TestLinkedList(unittest.TestCase):
         self.assertEqual(node1.next, node2)
         self.assertEqual(node2.prev, node1)
         self.assertIsNone(node2.next)
-        print(ll)
 
     def test_insert_middle(self):
         ll = LinkedList[str]()
@@ -249,6 +248,41 @@ class TestLinkedList(unittest.TestCase):
         self.assertIs(first.next, second)
         self.assertIs(second.prev, first)
         self.assertIsNone(second.next)
+
+    def test_linked_list_initialization(self):
+        llist = LinkedList(5, 3, 8, 1, 4)
+        self.assertEqual(str(llist), "5 -> 3 -> 8 -> 1 -> 4")
+
+    def test_sort_linked_list(self):
+        llist = LinkedList(5, 3, 8, 1, 4)
+        sorted_llist = sort_linked_list(llist)
+        self.assertEqual(str(sorted_llist), "1 -> 3 -> 4 -> 5 -> 8")
+
+    def test_empty_list(self):
+        llist = LinkedList()
+        sorted_llist = sort_linked_list(llist)
+        self.assertEqual(str(sorted_llist), "")
+
+    def test_single_element(self):
+        llist = LinkedList(42)
+        sorted_llist = sort_linked_list(llist)
+        self.assertEqual(str(sorted_llist), "42")
+
+    def test_sorted_list(self):
+        llist = LinkedList(1, 2, 3, 4, 5)
+        sorted_llist = sort_linked_list(llist)
+        self.assertEqual(str(sorted_llist), "1 -> 2 -> 3 -> 4 -> 5")
+
+    def test_reverse_sorted_list(self):
+        llist = LinkedList(5, 4, 3, 2, 1)
+        sorted_llist = sort_linked_list(llist)
+        self.assertEqual(str(sorted_llist), "1 -> 2 -> 3 -> 4 -> 5")
+
+    def test_original_list_mutation(self):
+        original_list = LinkedList(5, 3, 8, 1, 4)
+        original_str = str(original_list)
+        sort_linked_list(original_list)
+        self.assertEqual(original_str, str(original_list))
 
 
 if __name__ == "__main__":
