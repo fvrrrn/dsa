@@ -1,7 +1,5 @@
 from typing import Generic, Iterator, List, Optional, Protocol, TypeGuard, TypeVar, cast
 
-from monads import Just, Maybe, Nothing
-
 
 class Equalable(Protocol):
     def __eq__(self, other: object, /) -> bool: ...
@@ -19,7 +17,6 @@ class Node(Generic[T]):
 
 class LinkedList(Generic[T]):
     def __init__(self) -> None:
-        # TODO: make fields read-only so that there won't be erroneous states
         self.head: Optional[Node[T]] = None
         self.tail: Optional[Node[T]] = None
         self.size = 0
@@ -41,17 +38,6 @@ class LinkedList(Generic[T]):
         while node is not None:
             yield node
             node = node.prev
-
-    def __getitem__(self, index: int) -> Maybe[Node[T]]:
-        if not (0 <= index < self.size):
-            return Nothing()
-        node = self.head
-        for _ in range(index):
-            if node is not None:
-                node = node.next
-        if node is None:
-            return Nothing()
-        return Just(node)
 
     def add_in_head(self, item: Node[T]) -> None:
         match self.head, self.tail:
