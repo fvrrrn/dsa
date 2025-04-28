@@ -24,6 +24,9 @@ class Node(Generic[T]):
         self.next: Optional[Node[T]] = None
         self.prev: Optional[Node[T]] = None
 
+    def __str__(self):
+        return str(self.value)
+
 
 class HasNext(Protocol, Generic[T]):
     value: T

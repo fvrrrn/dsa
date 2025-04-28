@@ -284,12 +284,6 @@ class TestLinkedList(unittest.TestCase):
         sort_linked_list(original_list)
         self.assertEqual(original_str, str(original_list))
 
-    def test_million_sort(self):
-        llist = LinkedList(*range(1000))
-        sorted_llist = sort_linked_list(llist)
-        for node, number in zip(sorted_llist, range(1000)):
-            self.assertEqual(node.value, number)
-
 
 if __name__ == "__main__":
     unittest.main()

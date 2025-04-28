@@ -27,3 +27,28 @@ def t2_11(l: LinkedList2[T]) -> bool:
 def t2_12() -> LinkedList[int]:
     unsorted_list = LinkedList[int](1, 5, 6, 3, 1)
     return sort_linked_list(unsorted_list)
+
+
+def t2_13(l1: LinkedList[T], l2: LinkedList[T]) -> LinkedList[T]:
+    sorted_l1 = sort_linked_list(l1)
+    sorted_l2 = sort_linked_list(l2)
+    merged = LinkedList[T]()
+    current1 = sorted_l1.head
+    current2 = sorted_l2.head
+    while True:
+        match current1, current2:
+            case None, None:
+                return merged
+            case _, None:
+                merged.add_in_tail(current1.value)
+                current1 = current1.next
+            case None, _:
+                merged.add_in_tail(current2.value)
+                current2 = current2.next
+            case _, _:
+                if current2.value <= current1.value:
+                    merged.add_in_tail(current2.value)
+                    current2 = current2.next
+                else:
+                    merged.add_in_tail(current1.value)
+                    current1 = current1.next
