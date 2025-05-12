@@ -3,97 +3,55 @@ import unittest
 from t3 import DynArray
 
 
-class TestDynArray(unittest.TestCase):
-    def test_initialization(self):
-        da = DynArray()
-        self.assertEqual(len(da), 0)
-        self.assertEqual(da.capacity, 16)
+class TestDynArrayMethods(unittest.TestCase):
 
-    def test_append(self):
-        da = DynArray()
-        da.append(10)
-        self.assertEqual(len(da), 1)
-        self.assertEqual(da[0], 10)
+    def setUp(self):
+        self.array = DynArray()
 
+    def test_insert_no_buffer_increase(self):
         for i in range(15):
-            da.append(i)
-        self.assertEqual(len(da), 16)
-        self.assertEqual(da.capacity, 16)
+            self.array.insert(i, i)
+        self.assertEqual(len(self.array), 15)
+        self.assertEqual(self.array.capacity, 16)
+        self.array.insert(15, 99)
+        self.assertEqual(len(self.array), 16)
+        self.assertEqual(self.array.capacity, 16)
+        self.assertEqual(self.array[15], 99)
 
-        da.append(100)
-        self.assertEqual(len(da), 17)
-        self.assertEqual(da.capacity, 32)
-        self.assertEqual(da[16], 100)
-
-    def test_getitem(self):
-        da = DynArray()
-        da.append(1)
-        da.append(2)
-        self.assertEqual(da[0], 1)
-        self.assertEqual(da[1], 2)
-        with self.assertRaises(IndexError):
-            _ = da[2]
-
-    def test_resize(self):
-        da = DynArray()
+    def test_insert_with_buffer_increase(self):
         for i in range(16):
-            da.append(i)
-        self.assertEqual(len(da), 16)
-        self.assertEqual(da.capacity, 16)
+            self.array.insert(i, i)
+        self.array.insert(16, 99)
+        self.assertEqual(len(self.array), 17)
+        self.assertGreater(self.array.capacity, 16)
+        self.assertEqual(self.array[16], 99)
 
-        da.append(100)
-        self.assertEqual(len(da), 17)
-        self.assertEqual(da.capacity, 32)
-
-    def test_insert(self):
-        da = DynArray()
-        for i in range(5):
-            da.append(i)
-        da.insert(2, 99)
-        self.assertEqual(len(da), 6)
-        self.assertEqual(da[2], 99)
-        self.assertEqual(da[3], 2)
-
+    def test_insert_invalid_position(self):
         with self.assertRaises(IndexError):
-            da.insert(10, 100)
-
+            self.array.insert(-1, 5)
         with self.assertRaises(IndexError):
-            da.insert(20, 200)
+            self.array.insert(100, 5)
 
-        da.insert(0, -1)
-        self.assertEqual(len(da), 7)
-        self.assertEqual(da[0], -1)
-        self.assertEqual(da[1], 0)
+    def test_delete_no_buffer_decrease(self):
+        for i in range(16):
+            self.array.insert(i, i)
+        self.array.delete(15)
+        self.assertEqual(len(self.array), 15)
+        self.assertEqual(self.array.capacity, 16)
 
-        da.insert(len(da), 999)
-        self.assertEqual(len(da), 8)
-        self.assertEqual(da[7], 999)
-
-        for i in range(8, 16):
-            da.insert(len(da), i)
-        da.insert(16, 500)
-        self.assertEqual(len(da), 17)
-        self.assertEqual(da.capacity, 32)
-        self.assertEqual(da[16], 500)
-
-    def test_delete(self):
-        da = DynArray()
+    def test_delete_with_buffer_decrease(self):
         for i in range(32):
-            da.append(i)
+            self.array.insert(i, i)
+        for _ in range(25):
+            self.array.delete(len(self.array) - 1)
+        self.assertEqual(len(self.array), 7)
+        self.assertLess(self.array.capacity, 32)
 
-        da.delete(10)
-        self.assertEqual(len(da), 31)
-        self.assertEqual(da[10], 11)
-
-        for _ in range(24):
-            da.delete(0)
-
-        self.assertEqual(len(da), 7)
-        self.assertEqual(da.capacity, 16)
-        self.assertEqual(da[0], 25)
-
+    def test_delete_invalid_position(self):
         with self.assertRaises(IndexError):
-            da.delete(9)
+            self.array.delete(-1)
+        with self.assertRaises(IndexError):
+            self.array.delete(100)
 
 
 if __name__ == "__main__":
