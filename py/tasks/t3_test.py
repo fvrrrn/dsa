@@ -76,6 +76,25 @@ class TestDynArray(unittest.TestCase):
         self.assertEqual(da.capacity, 32)
         self.assertEqual(da[16], 500)
 
+    def test_delete(self):
+        da = DynArray()
+        for i in range(32):
+            da.append(i)
+
+        da.delete(10)
+        self.assertEqual(len(da), 31)
+        self.assertEqual(da[10], 11)
+
+        for _ in range(24):
+            da.delete(0)
+
+        self.assertEqual(len(da), 7)
+        self.assertEqual(da.capacity, 16)
+        self.assertEqual(da[0], 25)
+
+        with self.assertRaises(IndexError):
+            da.delete(9)
+
 
 if __name__ == "__main__":
     unittest.main()

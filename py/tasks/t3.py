@@ -15,6 +15,9 @@ T = TypeVar("T", bound=Comparable)
 
 
 class DynArray(Generic[T]):
+    def __str__(self):
+        return "[" + ", ".join(str(self.array[i]) for i in range(self.count)) + "]"
+
     def __init__(self):
         self.count = 0
         self.capacity = 16
@@ -59,4 +62,12 @@ class DynArray(Generic[T]):
         self.count += 1
 
     def delete(self, i):
-        pass
+        if i < 0 or i >= self.count:
+            raise IndexError("Index is out of bounds")
+        for j in range(i, self.count - 1):
+            self.array[j] = self.array[j + 1]
+        self.array[self.count - 1] = None
+        self.count -= 1
+        if 0 < self.count < self.capacity // 4:
+            new_capacity = max(16, self.capacity // 2)
+            self.resize(new_capacity)
