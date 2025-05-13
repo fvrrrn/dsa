@@ -107,6 +107,10 @@ class Stack(Generic[T]):
 
     def __iter__(self) -> Iterator[Node[T]]:
         node = self._head.next
-        while isinstance(node, Node):
-            yield node
-            node = node.next
+        while True:
+            match node:
+                case Dummy():
+                    break
+                case Node():
+                    yield node
+                    node = node.next
