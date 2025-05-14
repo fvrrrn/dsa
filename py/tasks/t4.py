@@ -1,16 +1,6 @@
-from typing import Any, Generic, Iterator, Optional, Protocol, TypeVar, Union
+from typing import Generic, Iterator, Optional, TypeVar, Union
 
-
-class Comparable(Protocol):
-    def __eq__(self, other: Any, /) -> bool: ...
-    def __ne__(self, other: Any, /) -> bool: ...
-    def __lt__(self, other: Any, /) -> bool: ...
-    def __le__(self, other: Any, /) -> bool: ...
-    def __gt__(self, other: Any, /) -> bool: ...
-    def __ge__(self, other: Any, /) -> bool: ...
-
-
-T = TypeVar("T", bound=Comparable)
+T = TypeVar("T")
 
 
 class Node(Generic[T]):
@@ -48,7 +38,7 @@ class Stack(Generic[T]):
         return self._size
 
     def __str__(self):
-        return " -> ".join(str(node.value) for node in self)
+        return ", ".join(str(node.value) for node in self)
 
     def __len__(self) -> int:
         return self._size
