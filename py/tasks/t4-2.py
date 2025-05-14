@@ -1,7 +1,24 @@
 import unittest
-from typing import Generic
+from dataclasses import dataclass
+from typing import Generic, Literal, TypeVar, Union
 
 from t4 import Stack
+
+T = TypeVar("T")
+
+
+class Maybe(Generic[T]):
+    pass
+
+
+@dataclass(frozen=True)
+class Just(Maybe[T]):
+    value: T
+
+
+@dataclass(frozen=True)
+class Nothing(Maybe[T]):
+    pass
 
 
 def t4_5_and_4_6(brackets: str) -> bool:
@@ -61,6 +78,49 @@ class AvgStack_4_8:
         if self.stack.size() == 0:
             return 0
         return self._sum / self.stack.size()
+
+
+class RPNEvaluator_4_9:
+    def __init__(self):
+        self.operators = Stack[Literal["+", "-", "*", "/", "="]]()
+        self.operands = Stack[Maybe[int]]()
+
+    def append(self, s: str) -> Union[None, Maybe[int]]:
+        for c in s:
+            match c:
+                case "+" | "-" | "*" | "/" | "=":
+                    self.operators.push(c)
+                case _ if c.isdigit():
+                    self.operands.push(Just(int(c)))
+
+            match len(self.operators), len(self.operands):
+                case 0, _:
+                    pass
+                case _, 0:
+                    pass
+                case _, 1:
+                    pass
+                case _, _:
+                    maybeB = self.operands.pop()
+                    maybeA = self.operands.pop()
+                    operator = self.operators.pop()
+                    match maybeA, operator, maybeB:
+                        case Just(a), "+", Just(b):
+                            self.operands.push(Just(a + b))
+                        case Just(a), "-", Just(b):
+                            self.operands.push(Just(a - b))
+                        case Just(a), "*", Just(b):
+                            self.operands.push(Just(a * b))
+                        case Just(a), "/", Just(b):
+                            match b:
+                                case 0:
+                                    self.operands.push(Nothing())
+                                case _:
+                                    # although technically it is possible to store floating-point numbers
+                                    # I decided not to by strictly using integers as the task required
+                                    self.operands.push(Just(a // b))
+                        case _, "=", _:
+                            return self.operands.pop()
 
 
 # because Python does not support `-` in file name
@@ -166,6 +226,65 @@ class TestStack2(unittest.TestCase):
         avg_stack.push(3)
         avg_stack.push(3)
         self.assertEqual(avg_stack.avg(), 3.0)
+
+    def test_rpn_operations(self):
+        evaluator = RPNEvaluator_4_9()
+
+        evaluator.append("12+")
+        result = evaluator.operands.pop()
+        match result:
+            case Just(value):
+                self.assertEqual(value, 3)
+            case Nothing():
+                self.fail("Result should not be Nothing.")
+
+        evaluator.append("12-")
+        result = evaluator.operands.pop()
+        match result:
+            case Just(value):
+                self.assertEqual(value, -1)
+            case Nothing():
+                self.fail("Result should not be Nothing.")
+
+        evaluator.append("22*")
+        result = evaluator.operands.pop()
+        match result:
+            case Just(value):
+                self.assertEqual(value, 4)
+            case Nothing():
+                self.assertEqual(result, Nothing())
+
+        evaluator.append("42/")
+        result = evaluator.operands.pop()
+        match result:
+            case Just(value):
+                self.assertEqual(value, 2)
+            case Nothing():
+                self.fail("Result should not be Nothing.")
+
+        evaluator.append("01/")
+        result = evaluator.operands.pop()
+        match result:
+            case Just(value):
+                self.assertEqual(value, 0)
+            case Nothing():
+                self.fail("Result should not be Nothing.")
+
+        evaluator.append("00/")
+        result = evaluator.operands.pop()
+        match result:
+            case Just(value):
+                self.fail("Result should be Nothing due to division by zero.")
+            case Nothing():
+                self.assertEqual(result, Nothing())
+
+        evaluator.append("82+5*9+")
+        result = evaluator.append("=")
+        match result:
+            case Just(value):
+                self.assertEqual(value, 59)
+            case Nothing():
+                self.fail("Result should not be Nothing.")
 
 
 if __name__ == "__main__":
