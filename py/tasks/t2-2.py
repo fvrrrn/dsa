@@ -33,22 +33,22 @@ def t2_13(l1: LinkedList[T], l2: LinkedList[T]) -> LinkedList[T]:
     sorted_l1 = sort_linked_list(l1)
     sorted_l2 = sort_linked_list(l2)
     merged = LinkedList[T]()
-    current1 = sorted_l1.head
-    current2 = sorted_l2.head
+    current1 = sorted_l1._head
+    current2 = sorted_l2._head
     while True:
         match current1, current2:
             case None, None:
                 return merged
             case _, None:
-                merged.add_in_tail(current1.value)
+                merged.append(current1.value)
                 current1 = current1.next
             case None, _:
-                merged.add_in_tail(current2.value)
+                merged.append(current2.value)
                 current2 = current2.next
             case _, _:
                 if current2.value <= current1.value:
-                    merged.add_in_tail(current2.value)
+                    merged.append(current2.value)
                     current2 = current2.next
                 else:
-                    merged.add_in_tail(current1.value)
+                    merged.append(current1.value)
                     current1 = current1.next
