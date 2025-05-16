@@ -2,10 +2,11 @@ import unittest
 from typing import Generic, Iterator, TypeVar
 
 from stack import Stack
+from tasks.t5 import Queue
 
 
 def t5_4(self, n: int):
-    n = n % self.size() if self.size > 0 else 0
+    n = n % self.size() if self.size() > 0 else 0
     for _ in range(n):
         self.enqueue(self.dequeue())
 
@@ -45,8 +46,29 @@ class PersistentQueue_5_5:
                 return value
 
 
-class TestPersistentQueue(unittest.TestCase):
-    def test_basic_operations(self):
+class Test5_2(unittest.TestCase):
+    def test_t5_4(self):
+        queue = Queue()
+        for i in range(1, 6):
+            queue.enqueue(i)
+
+        t5_4(queue, 0)
+        self.assertListEqual(list(queue), [1, 2, 3, 4, 5])
+
+        t5_4(queue, 2)
+        self.assertListEqual(list(queue), [3, 4, 5, 1, 2])
+
+        t5_4(queue, 5)
+        self.assertListEqual(list(queue), [3, 4, 5, 1, 2])
+
+        t5_4(queue, 7)
+        self.assertListEqual(list(queue), [5, 1, 2, 3, 4])
+
+        empty_queue = Queue()
+        t5_4(empty_queue, 3)
+        self.assertListEqual(list(empty_queue), [])
+
+    def test_PersistentQueue_5_5(self):
         q = PersistentQueue_5_5()
 
         self.assertEqual(len(q), 0)
