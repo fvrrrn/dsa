@@ -88,6 +88,27 @@ class Queue(Generic[T]):
                     yield node.value
                     node = node.prev
 
+    def __getitem__(self, index: int) -> T:
+        if index < 0 or index >= self._size:
+            raise IndexError("Index out of range")
+        for i, value in enumerate(self):
+            if i == index:
+                return value
+        # theoretically unreachable due to check above
+        raise IndexError("Index out of range")
+
+    def __setitem__(self, index: int, value: T) -> None:
+        if index < 0 or index >= self._size:
+            raise IndexError("Index out of range")
+        node = self._head.next
+        for _ in range(index):
+            node = node.next
+        match node:
+            case Dummy():
+                raise IndexError("Index out of range")
+            case Node():
+                node.value = value
+
     def __len__(self):
         return self._size
 

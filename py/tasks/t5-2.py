@@ -5,10 +5,10 @@ from stack import Stack
 from tasks.t5 import Queue
 
 
-def t5_4(self, n: int):
-    n = n % self.size() if self.size() > 0 else 0
+def t5_4(queue: Queue, n: int):
+    n = n % queue.size() if queue.size() > 0 else 0
     for _ in range(n):
-        self.enqueue(self.dequeue())
+        queue.enqueue(queue.dequeue())
 
 
 class PersistentQueue_5_5:
@@ -44,6 +44,19 @@ class PersistentQueue_5_5:
             case value:
                 self._dequeued.push(value)
                 return value
+
+
+def t5_6(queue: Queue):
+    reversed_queue = Queue()
+    for value in reversed(queue):
+        reversed_queue.enqueue(value)
+    return reversed_queue
+
+
+def t5_6_2(queue: Queue):
+    n = queue.size()
+    for i in range(n // 2):
+        queue[i], queue[n - 1 - i] = queue[n - 1 - i], queue[i]
 
 
 class Test5_2(unittest.TestCase):
@@ -102,6 +115,45 @@ class Test5_2(unittest.TestCase):
         q.enqueue(5)
         self.assertListEqual(list(q.queued), [5, 3, 2, 1])
         self.assertListEqual(list(q.enqueued), [5])
+
+    def test_t5_6(self):
+        queue = Queue()
+        for i in range(1, 6):
+            queue.enqueue(i)
+
+        reversed_queue = t5_6(queue)
+        self.assertListEqual(list(reversed_queue), [5, 4, 3, 2, 1])
+
+        empty_queue = Queue()
+        reversed_empty = t5_6(empty_queue)
+        self.assertListEqual(list(reversed_empty), [])
+
+        single_element_queue = Queue()
+        single_element_queue.enqueue(42)
+        reversed_single = t5_6(single_element_queue)
+        self.assertListEqual(list(reversed_single), [42])
+
+    def test_5_6_2(self):
+        queue = Queue()
+        for i in range(1, 6):
+            queue.enqueue(i)
+        t5_6_2(queue)
+        self.assertListEqual(list(queue), [5, 4, 3, 2, 1])
+
+        queue2 = Queue()
+        for i in range(1, 7):
+            queue2.enqueue(i)
+        t5_6_2(queue2)
+        self.assertListEqual(list(queue2), [6, 5, 4, 3, 2, 1])
+
+        empty_queue = Queue()
+        t5_6_2(empty_queue)
+        self.assertListEqual(list(empty_queue), [])
+
+        single_element_queue = Queue()
+        single_element_queue.enqueue(42)
+        t5_6_2(single_element_queue)
+        self.assertListEqual(list(single_element_queue), [42])
 
 
 if __name__ == "__main__":
