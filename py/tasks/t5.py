@@ -66,7 +66,7 @@ class Queue(Generic[T]):
                 self._size -= 1
                 return value
 
-    def __iter__(self) -> Iterator[Node[T]]:
+    def __iter__(self) -> Iterator[T]:
         node = self._head.next
         # prevent infinite loop if cycles are present
         for _ in range(self._size):
@@ -74,11 +74,22 @@ class Queue(Generic[T]):
                 case Dummy():
                     break
                 case Node():
-                    yield node
+                    yield node.value
                     node = node.next
+
+    def __reversed__(self) -> Iterator[T]:
+        node = self._tail.prev
+        # prevent infinite loop if cycles are present
+        for _ in range(self._size):
+            match node:
+                case Dummy():
+                    break
+                case Node():
+                    yield node.value
+                    node = node.prev
 
     def __len__(self):
         return self._size
 
     def __str__(self):
-        return " -> ".join(str(node.value) for node in self)
+        return " -> ".join(str(value) for value in self)
