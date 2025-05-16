@@ -60,7 +60,7 @@ class TestQueue(unittest.TestCase):
     def test_reversed(self):
         queue = Queue[int](10, 20, 30)
         reversed_values = list(reversed(queue))
-        self.assertEqual([node.value for node in reversed_values], [30, 20, 10])
+        self.assertEqual([value for value in reversed_values], [30, 20, 10])
 
 
 if __name__ == "__main__":
