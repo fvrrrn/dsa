@@ -38,7 +38,7 @@ class Stack(Generic[T]):
             case Node():
                 return self._list._head.next.value
 
-    def __iter__(self) -> Iterator[Node[T]]:
+    def __iter__(self) -> Iterator[T]:
         node = self._list._head.next
         while True:
             match node:
@@ -48,7 +48,7 @@ class Stack(Generic[T]):
                     yield node.value
                     node = node.next
 
-    def __reversed__(self) -> Iterator[Node[T]]:
+    def __reversed__(self) -> Iterator[T]:
         node = self._list._tail.prev
         while True:
             match node:
