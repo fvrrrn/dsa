@@ -34,7 +34,7 @@ class Queue(Generic[T]):
     def size(self):
         return self._size
 
-    def enqueue(self, value: T) -> Node[T]:
+    def enqueue(self, value: T) -> None:
         """Add an element to the end of the queue for O(1) time complexity and O(1) space complexity.
 
         Args:
@@ -49,7 +49,7 @@ class Queue(Generic[T]):
         self._tail.prev.next = node
         self._tail.prev = node
         self._size += 1
-        return node
+        # return node
 
     def dequeue(self) -> T | None:
         """Remove and return the first element from the queue for O(1) time complexity and O(1) space complexity.
@@ -63,6 +63,7 @@ class Queue(Generic[T]):
             case Node():
                 value = self._head.next.value
                 self._head.next = self._head.next.next
+                self._head.next.prev = self._head
                 self._size -= 1
                 return value
 

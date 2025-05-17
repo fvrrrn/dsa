@@ -30,13 +30,18 @@ class TestQueue(unittest.TestCase):
         self.assertEqual(len(queue), 0)
 
     def test_dequeue_multiple_items(self):
-        queue = Queue[int](10, 20, 30)
-        value1 = queue.dequeue()
-        value2 = queue.dequeue()
+        queue = Queue[int]()
+        queue.enqueue(10)
+        queue.enqueue(20)
+        queue.enqueue(30)
 
-        self.assertEqual(value1, 10)
-        self.assertEqual(value2, 20)
+        self.assertEqual(len(queue), 3)
+        self.assertEqual(queue.dequeue(), 10)
+        self.assertEqual(len(queue), 2)
+        self.assertEqual(queue.dequeue(), 20)
         self.assertEqual(len(queue), 1)
+        self.assertEqual(queue.dequeue(), 30)
+        self.assertEqual(len(queue), 0)
 
     def test_dequeue_empty_queue(self):
         queue = Queue[int]()
