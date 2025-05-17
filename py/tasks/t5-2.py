@@ -1,3 +1,4 @@
+import ctypes
 import unittest
 from typing import Generic, Iterator, TypeVar
 
@@ -57,6 +58,40 @@ def t5_6_2(queue: Queue):
     n = queue.size()
     for i in range(n // 2):
         queue[i], queue[n - 1 - i] = queue[n - 1 - i], queue[i]
+
+
+class StaticQueue_5_7:
+    def __init__(self, capacity):
+        self._capacity = capacity
+        self._queue = (capacity * ctypes.py_object)()
+        self._start = 0
+        self._end = 0
+        self._size = 0
+
+    def is_empty(self):
+        return self._size == 0
+
+    def is_full(self):
+        return self._size == self._capacity
+
+    def enqueue(self, item):
+        if self.is_full():
+            return None
+        else:
+            at = self._end
+            self._queue[self._end] = item
+            self._end = (self._end + 1) % self._capacity
+            self._size += 1
+            return at
+
+    def dequeue(self):
+        if self.is_empty():
+            return None
+        else:
+            item = self._queue[self._start]
+            self._start = (self._start + 1) % self._capacity
+            self._size -= 1
+            return item
 
 
 class Test5_2(unittest.TestCase):
@@ -154,6 +189,49 @@ class Test5_2(unittest.TestCase):
         single_element_queue.enqueue(42)
         t5_6_2(single_element_queue)
         self.assertListEqual(list(single_element_queue), [42])
+
+    def test_StaticQueue_5_7(self):
+        queue = StaticQueue_5_7(3)
+        self.assertTrue(queue.is_empty())
+        self.assertFalse(queue.is_full())
+
+        self.assertEqual(queue.enqueue(10), 0)
+        self.assertEqual(queue._queue[0], 10)
+        self.assertEqual(queue._size, 1)
+
+        self.assertEqual(queue.enqueue(20), 1)
+        self.assertEqual(queue.enqueue(30), 2)
+        self.assertTrue(queue.is_full())
+        self.assertEqual(queue._size, 3)
+        self.assertIsNone(queue.enqueue(40))
+
+        self.assertEqual(queue.dequeue(), 10)
+        self.assertEqual(queue.dequeue(), 20)
+        self.assertEqual(queue.dequeue(), 30)
+        self.assertTrue(queue.is_empty())
+        self.assertIsNone(queue.dequeue())
+
+        queue.enqueue(1)
+        queue.enqueue(2)
+        self.assertFalse(queue.is_empty())
+        self.assertFalse(queue.is_full())
+        self.assertEqual(queue.dequeue(), 1)
+        queue.enqueue(3)
+        self.assertEqual(queue.dequeue(), 2)
+        self.assertEqual(queue.dequeue(), 3)
+        self.assertTrue(queue.is_empty())
+
+        queue.enqueue(1)
+        queue.enqueue(2)
+        queue.enqueue(3)
+        self.assertTrue(queue.is_full())
+        self.assertIsNone(queue.enqueue(4))
+        self.assertEqual(queue.dequeue(), 1)
+        queue.enqueue(4)
+        self.assertEqual(queue.dequeue(), 2)
+        self.assertEqual(queue.dequeue(), 3)
+        self.assertEqual(queue.dequeue(), 4)
+        self.assertTrue(queue.is_empty())
 
 
 if __name__ == "__main__":
