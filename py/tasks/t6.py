@@ -1,15 +1,5 @@
 import ctypes
-from typing import (
-    Any,
-    Generic,
-    Iterator,
-    Optional,
-    Protocol,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from typing import Any, Generic, Iterator, Optional, Protocol, TypeVar, Union, overload
 
 
 class Comparable(Protocol):
