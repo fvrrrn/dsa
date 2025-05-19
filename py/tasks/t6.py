@@ -189,3 +189,7 @@ class Deque(Generic[T]):
         return all(
             a == b for a, b in zip(self.array[:mid], reversed(self.array[-mid:]))
         )
+
+    @property
+    def min(self):
+        return self._min
