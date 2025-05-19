@@ -1,7 +1,39 @@
 import ctypes
-from typing import Generic, Iterator, TypeVar, Union, overload
+from typing import (
+    Any,
+    Generic,
+    Iterator,
+    Optional,
+    Protocol,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
-T = TypeVar("T")
+
+class Comparable(Protocol):
+    def __eq__(self, other: Any, /) -> bool: ...
+    def __ne__(self, other: Any, /) -> bool: ...
+    def __lt__(self, other: Any, /) -> bool: ...
+    def __le__(self, other: Any, /) -> bool: ...
+    def __gt__(self, other: Any, /) -> bool: ...
+    def __ge__(self, other: Any, /) -> bool: ...
+
+
+def is_comparable(obj: Any) -> bool:
+    try:
+        _ = obj < obj
+        _ = obj <= obj
+        _ = obj > obj
+        _ = obj >= obj
+        _ = obj == obj
+        return True
+    except (TypeError, AttributeError):
+        return False
+
+
+T = TypeVar("T", bound=Comparable)
 
 
 class DynArray(Generic[T]):
@@ -77,35 +109,82 @@ class DynArray(Generic[T]):
         return value
 
 
+@overload
+def nmin(a: T, b: T) -> T: ...
+@overload
+def nmin(a: T, b: Any) -> T: ...
+@overload
+def nmin(a: Any, b: T) -> T: ...
+
+
+def nmin(a: Union[T, Any], b: Union[T, Any]) -> T:
+    match is_comparable(a), is_comparable(b):
+        case False, False:
+            # in case of `# type: ignore`
+            raise TypeError("Both arguments cannot be non-comparable")
+        case False, True:
+            return b
+        case True, False:
+            return a
+        case True, True:
+            return min(a, b)
+
+
 class Deque(Generic[T]):
     def __init__(self):
         self.array = DynArray[T]()
+        self._min: Optional[T] = None
 
     def addFront(self, item: T):
+        self._min = nmin(self._min, item)
         self.array.insert(0, item)
 
     def addTail(self, item: T):
+        self._min = nmin(self._min, item)
         self.array.append(item)
 
     def removeFront(self) -> T | None:
         try:
-            return self.array.delete(0)
+            value = self.array.delete(0)
+
+            # if deleted item is minimum, check if this was the last element of such value
+            if value == self._min:
+                self._min = self._get_min()
+
+            return value
         except IndexError:
             return None
 
-    def removeTail(self):
+    def removeTail(self) -> T | None:
         try:
-            return self.array.delete(len(self.array) - 1)
+            value = self.array.delete(len(self.array) - 1)
+
+            # if deleted item is minimum, check if this was the last element of such value
+            if value == self._min:
+                self._min = self._get_min()
+
+            return value
         except IndexError:
             return None
 
-    def size(self):
+    def size(self) -> int:
         return len(self.array)
 
     def __iter__(self) -> Iterator[T]:
         return iter(self.array)
 
-    def is_palindrome(self):
+    def __str__(self) -> str:
+        return str(self.array)
+
+    def _get_min(self) -> T | None:
+        iterator = iter(self.array)
+        next_min = next(iterator, None)
+        for element in iterator:
+            if element < next_min:
+                next_min = element
+        return next_min
+
+    def is_palindrome(self) -> bool:
         mid = len(self.array) // 2
         return all(
             a == b for a, b in zip(self.array[:mid], reversed(self.array[-mid:]))

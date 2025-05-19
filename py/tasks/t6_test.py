@@ -67,7 +67,7 @@ class TestDeque(unittest.TestCase):
         elements = list(deque)
         self.assertEqual(elements, [1, 2, 3])
 
-    def test_empty_deque(self):
+    def test_empty_deque_palindrome(self):
         dq = Deque[str]()
         self.assertTrue(dq.is_palindrome())
 
@@ -124,18 +124,90 @@ class TestDeque(unittest.TestCase):
             dq.addTail(num)
         self.assertFalse(dq.is_palindrome())
 
-    def test_mixed_data_types(self):
-        dq = Deque[object]()
-        dq.addTail("a")
-        dq.addTail(1)
-        dq.addTail("a")
-        self.assertTrue(dq.is_palindrome())
+    def test_empty_deque(self):
+        dq = Deque[int]()
+        self.assertIsNone(dq._min)
 
-        dq = Deque[object]()
-        dq.addTail("a")
-        dq.addTail(1)
-        dq.addTail("b")
-        self.assertFalse(dq.is_palindrome())
+    def test_add_single_element(self):
+        dq = Deque[int]()
+        dq.addTail(5)
+        self.assertEqual(dq._min, 5)
+
+    def test_add_multiple_elements(self):
+        dq = Deque[int]()
+        dq.addTail(5)
+        dq.addTail(3)
+        dq.addTail(7)
+        self.assertEqual(dq._min, 3)
+
+    def test_add_front_and_tail(self):
+        dq = Deque[int]()
+        dq.addTail(10)
+        dq.addFront(5)
+        dq.addTail(7)
+        self.assertEqual(dq._min, 5)
+
+    def test_remove_front(self):
+        dq = Deque[int]()
+        dq.addTail(10)
+        dq.addTail(5)
+        dq.addTail(7)
+        self.assertEqual(dq._min, 5)
+
+        print(dq)
+        dq.removeFront()  # Removes 10
+        self.assertEqual(dq._min, 5)
+
+        dq.removeFront()  # Removes 5
+        self.assertEqual(dq._min, 7)
+
+        dq.removeFront()  # Removes 7
+        self.assertIsNone(dq._min)
+
+    def test_remove_tail(self):
+        dq = Deque[int]()
+        dq.addTail(5)
+        dq.addTail(2)
+        dq.addTail(8)
+        self.assertEqual(dq._min, 2)
+
+        dq.removeTail()  # Removes 8
+        self.assertEqual(dq._min, 2)
+
+        dq.removeTail()  # Removes 2
+        self.assertEqual(dq._min, 5)
+
+        dq.removeTail()  # Removes 5
+        self.assertIsNone(dq._min)
+
+    def test_remove_min_last_instance(self):
+        dq = Deque[int]()
+        dq.addTail(4)
+        dq.addTail(2)
+        dq.addTail(2)
+        dq.addTail(5)
+        self.assertEqual(dq._min, 2)
+
+        dq.removeFront()  # Removes 4
+        self.assertEqual(dq._min, 2)
+
+        dq.removeFront()  # Removes 2 (first instance)
+        self.assertEqual(dq._min, 2)
+
+        dq.removeFront()  # Removes 2 (last instance)
+        self.assertEqual(dq._min, 5)
+
+    def test_remove_until_empty(self):
+        dq = Deque[int]()
+        dq.addTail(10)
+        dq.addTail(5)
+        dq.addTail(7)
+        self.assertEqual(dq._min, 5)
+
+        dq.removeFront()
+        dq.removeFront()
+        dq.removeFront()
+        self.assertIsNone(dq._min)
 
 
 if __name__ == "__main__":
