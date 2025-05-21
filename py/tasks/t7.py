@@ -62,10 +62,22 @@ class OrderedList(Generic[T]):
             return 0
         return 1
 
-    def add(self, value):
-        pass
-        # автоматическая вставка value
-        # в нужную позицию
+    def add(self, value: T) -> None:
+        node = self.head.next
+        while True:
+            match node:
+                case Dummy():
+                    break
+                case Node():
+                    if node.value <= value:
+                        break
+                    node = node.next
+
+        added = Node(value)
+        node.prev.next = added
+        added.prev = node.prev
+        added.next = node
+        node.prev = added
 
     def find(self, val: T) -> Optional[Node[T]]:
         node = self.head.next
@@ -90,9 +102,9 @@ class OrderedList(Generic[T]):
 
     def get_all(self):
         r = []
-        node = self.head
+        node = self.head.next
         while not isinstance(node, Dummy):
-            r.append(node)
+            r.append(node.value)
             node = node.next
         return r
 
