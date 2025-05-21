@@ -90,8 +90,11 @@ class OrderedList(Generic[T]):
                         return node
                     node = node.next
 
-    def delete(self, val):
-        pass  # здесь будет ваш код
+    def delete(self, val: T):
+        node = self.find(val)
+        if node is not None:
+            node.prev.next = node.next
+            node.next.prev = node.prev
 
     def clean(self, asc):
         self.__ascending = asc
@@ -104,7 +107,7 @@ class OrderedList(Generic[T]):
         r = []
         node = self.head.next
         while not isinstance(node, Dummy):
-            r.append(node.value)
+            r.append(node)
             node = node.next
         return r
 

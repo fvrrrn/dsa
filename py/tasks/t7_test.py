@@ -61,8 +61,50 @@ class TestOrderedList(unittest.TestCase):
         ol.add(1)
         ol.add(2)
         ol.add(3)
-        expected = "3 -> 2 -> 1"  # According to your current insert logic (descending)
+        expected = "3 -> 2 -> 1"
         self.assertEqual(str(ol), expected)
+
+    def test_delete_existing_element(self):
+        ol = OrderedList(asc=True)
+        ol.add(3)
+        ol.add(2)
+        ol.add(1)
+        ol.delete(2)
+        elements = list(ol)
+        self.assertEqual(elements, [3, 1])  # 2 is removed
+
+    def test_delete_non_existing_element(self):
+        ol = OrderedList(asc=True)
+        ol.add(1)
+        ol.add(2)
+        ol.delete(5)  # No exception should be raised
+        elements = list(ol)
+        self.assertEqual(elements, [2, 1])  # List unchanged
+
+    def test_delete_from_empty_list(self):
+        ol = OrderedList(asc=True)
+        ol.delete(10)  # No exception should be raised
+        elements = list(ol)
+        self.assertEqual(elements, [])  # Still empty
+
+    def test_delete_all_elements(self):
+        ol = OrderedList(asc=True)
+        ol.add(1)
+        ol.add(2)
+        ol.add(3)
+        ol.delete(1)
+        ol.delete(2)
+        ol.delete(3)
+        self.assertEqual(list(ol), [])  # List is empty after deletions
+
+    def test_delete_duplicate_element_once(self):
+        ol = OrderedList(asc=True)
+        ol.add(1)
+        ol.add(2)
+        ol.add(2)
+        ol.delete(2)
+        elements = list(ol)
+        self.assertEqual(elements.count(2), 1)  # Only one 2 remains
 
 
 if __name__ == "__main__":
