@@ -68,8 +68,15 @@ class OrderedList(Generic[T]):
         # в нужную позицию
 
     def find(self, val: T) -> Optional[Node[T]]:
-
-        return None  # здесь будет ваш код
+        node = self.head.next
+        while True:
+            match node:
+                case Dummy():
+                    return None
+                case Node():
+                    if node.value == val:
+                        return node
+                    node = node.next
 
     def delete(self, val):
         pass  # здесь будет ваш код
