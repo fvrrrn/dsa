@@ -87,6 +87,15 @@ class OrderedList(Generic[T]):
 
     def find(self, val: T) -> Optional[Node[T]]:
         node = self.head.next
+
+        if not isinstance(self.head.next, Dummy):
+            # node=Node(2) and val=1 return None because 2 is the smallest number
+            if self.__ascending and self.compare(val, node.value) == -1:
+                return None
+            # node=Node(5) and val=6 return None because 6 is the largest number
+            elif not self.__ascending and self.compare(val, node.value) == 1:
+                return None
+
         while True:
             match node:
                 case Dummy():
