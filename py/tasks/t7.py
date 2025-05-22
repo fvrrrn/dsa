@@ -91,6 +91,15 @@ class OrderedList(Generic[T]):
         node.prev = new_node
         self.size += 1
 
+    def unsafe_append(self, value: T) -> Node[T]:
+        node = Node(value)
+        node.prev = self.tail.prev
+        node.next = self.tail
+        self.tail.prev.next = node
+        self.tail.prev = node
+        self.size += 1
+        return node
+
     def find(self, val: T) -> Optional[Node[T]]:
         node = self.head.next
 
@@ -147,14 +156,14 @@ class OrderedList(Generic[T]):
                     yield node.value
                     node = node.next
 
-    def __reversed__(self):
+    def __reversed__(self) -> Iterator[T]:
         node = self.tail.prev
         while True:
             match node:
                 case Dummy():
                     break
                 case Node():
-                    yield node
+                    yield node.value
                     node = node.prev
 
     def __len__(self):
