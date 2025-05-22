@@ -1,5 +1,5 @@
 import unittest
-from typing import Any, Generic, Iterator, Literal, Optional, Protocol, TypeVar
+from typing import Any, Callable, Generic, Iterator, Protocol, TypeVar
 
 from t7 import OrderedList
 
@@ -25,7 +25,7 @@ def is_comparable(obj: Any) -> bool:
         return False
 
 
-T = TypeVar("T", bound=Comparable)
+T = TypeVar("T", bound=Comparable, covariant=True)
 
 
 def t7_8(ol: OrderedList[T]):
@@ -37,10 +37,87 @@ def t7_8(ol: OrderedList[T]):
     currentValue = None
     for value in iterator:
         if value != currentValue:
-            # NOTE: instead of O(n) or O(n*lg n) `add` use O(1) `unsafe_append` because order is already preserved
-            dedupedOl.add(value)
+            dedupedOl.unsafe_append(value)
             currentValue = value
     return dedupedOl
+
+
+class IteratorStrategy(Protocol[T]):
+    def __iter__(self) -> Iterator[T]: ...
+
+
+class ConcreteIteratorStrategyAscending(IteratorStrategy):
+    def __init__(self, ol: OrderedList[T]):
+        self.list = ol
+
+    def __iter__(self):
+        match self.list.is_asc:
+            case True:
+                return iter(self.list)
+            case False:
+                return reversed(self.list)
+
+
+class ConcreteIteratorStrategyDescending(IteratorStrategy):
+    def __init__(self, ol: OrderedList[T]):
+        self.list = ol
+
+    def __iter__(self):
+        match self.list.is_asc:
+            case True:
+                return reversed(self.list)
+            case False:
+                return iter(self.list)
+
+
+def strategyByOrder(asc: bool) -> Callable[[OrderedList[T]], IteratorStrategy[T]]:
+    match asc:
+        case True:
+            return ConcreteIteratorStrategyAscending
+        case False:
+            return ConcreteIteratorStrategyDescending
+
+
+# TODO: rename IteratorStrategy to MergeStrategy and put compare in it
+def compare(asc: bool, v1: T, v2: T) -> bool:
+    match asc:
+        case True:
+            return v1 <= v2
+        case False:
+            return v1 >= v2
+
+
+# 1. pick merged list order strategy `asc` (ascending/descending)
+# 2. pick accorning iterator for each list
+# for OrderedList(True, 1,2,3) it is iter() if asc=True
+# for OrderedList(False, 3,2,1) it is reversed() if asc=True
+# and vice versa
+# 3. create pointers at the start of those iterators (e.g. [from 1,2, to 3], [to 3,2,from 1]) for asc=True)
+# 4. compare pointers' values by strategy (<= for asc, >= for desc)
+def t7_9(ol1: OrderedList[T], ol2: OrderedList[T], asc: bool):
+    iteratorStrategy = strategyByOrder(asc)
+    merged = OrderedList[T](asc=asc)
+    iterator1 = iter(iteratorStrategy(ol1))
+    pointer1 = next(iterator1, None)
+    iterator2 = iter(iteratorStrategy(ol2))
+    pointer2 = next(iterator2, None)
+    while True:
+        match pointer1, pointer2:
+            case None, None:
+                return merged
+            case _, None:
+                merged.unsafe_append(pointer1)
+                pointer1 = next(iterator1, None)
+            case None, _:
+                merged.unsafe_append(pointer2)
+                pointer2 = next(iterator2, None)
+            case _, _:
+                if compare(asc, pointer2, pointer1):
+                    merged.unsafe_append(pointer2)
+                    pointer2 = next(iterator2, None)
+                else:
+                    merged.unsafe_append(pointer1)
+                    pointer1 = next(iterator1, None)
 
 
 class TestOrderedList(unittest.TestCase):
@@ -70,6 +147,72 @@ class TestOrderedList(unittest.TestCase):
         result = list(deduped)
 
         self.assertEqual(result, [1, 2, 3, 4, 5])
+
+    def test_merge_both_nonempty_ascending(self):
+        ol1 = OrderedList(asc=True)
+        ol2 = OrderedList(asc=True)
+        for val in [1, 3, 5]:
+            ol1.add(val)
+        for val in [2, 4, 6]:
+            ol2.add(val)
+
+        merged = t7_9(ol1, ol2, asc=True)
+        result = list(merged)
+        self.assertEqual(result, [1, 2, 3, 4, 5, 6])
+
+    def test_merge_both_nonempty_descending(self):
+        ol1 = OrderedList(asc=False)
+        ol2 = OrderedList(asc=False)
+        for val in [5, 3, 1]:
+            ol1.add(val)
+        for val in [6, 4, 2]:
+            ol2.add(val)
+
+        merged = t7_9(ol1, ol2, asc=False)
+        result = list(merged)
+        self.assertEqual(result, [6, 5, 4, 3, 2, 1])
+
+    def test_merge_both_nonempty_ascending_descending(self):
+        ol1 = OrderedList(asc=False)
+        ol2 = OrderedList(asc=True)
+        for val in [5, 3, 1]:
+            ol1.add(val)
+        for val in [1, 2, 3]:
+            ol2.add(val)
+
+        merged = t7_9(ol1, ol2, asc=True)
+        result = list(merged)
+        self.assertEqual(result, [1, 1, 2, 3, 3, 5])
+
+    def test_merge_one_empty(self):
+        ol1 = OrderedList(asc=True)
+        ol2 = OrderedList(asc=True)
+        for val in [1, 2, 3]:
+            ol1.add(val)
+        # ol2 remains empty
+
+        merged = t7_9(ol1, ol2, asc=True)
+        result = list(merged)
+        self.assertEqual(result, [1, 2, 3])
+
+    def test_merge_both_empty(self):
+        ol1 = OrderedList(asc=True)
+        ol2 = OrderedList(asc=True)
+        merged = t7_9(ol1, ol2, asc=True)
+        result = list(merged)
+        self.assertEqual(result, [])
+
+    def test_merge_duplicates(self):
+        ol1 = OrderedList(asc=True)
+        ol2 = OrderedList(asc=True)
+        for val in [1, 2, 3]:
+            ol1.add(val)
+        for val in [2, 3, 4]:
+            ol2.add(val)
+
+        merged = t7_9(ol1, ol2, asc=True)
+        result = list(merged)
+        self.assertEqual(result, [1, 2, 2, 3, 3, 4])
 
 
 if __name__ == "__main__":
