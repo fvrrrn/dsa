@@ -1,5 +1,6 @@
 import unittest
-from typing import Any, Callable, Generic, Iterator, Protocol, TypeVar
+from collections import defaultdict
+from typing import Any, Callable, Generic, Iterator, Optional, Protocol, TypeVar
 
 from t7 import OrderedList
 
@@ -121,6 +122,24 @@ def t7_9(ol1: OrderedList[T], ol2: OrderedList[T], asc: bool):
 
 
 # task 7.10 is OrderedList.__contains__
+
+
+def t7_11(ol: OrderedList[T]) -> Optional[T]:
+    if len(ol) == 0:
+        return None
+
+    frequencyDict = defaultdict(int)
+    # sorting dict by desc and picking first element is less efficient
+    max_count = 0
+    result: Optional[T] = None
+
+    for value in ol:
+        frequencyDict[value] += 1
+        if frequencyDict[value] > max_count:
+            max_count = frequencyDict[value]
+            result = value
+
+    return result
 
 
 class TestOrderedList(unittest.TestCase):
@@ -298,6 +317,40 @@ class TestOrderedList(unittest.TestCase):
             sub.add(v)
 
         self.assertTrue(sub in main)
+
+    def test_empty_ordered_list(self):
+        ol = OrderedList(asc=True)
+        self.assertIsNone(t7_11(ol))
+
+    def test_single_element(self):
+        ol = OrderedList(asc=True)
+        ol.add(42)
+        self.assertEqual(t7_11(ol), 42)
+
+    def test_multiple_unique_elements(self):
+        ol = OrderedList(asc=True)
+        for v in [1, 2, 3, 4, 5]:
+            ol.add(v)
+        self.assertIn(t7_11(ol), [1, 2, 3, 4, 5])  # all appear once
+
+    def test_clear_most_common(self):
+        ol = OrderedList(asc=True)
+        for v in [1, 2, 2, 3, 3, 3, 4]:
+            ol.add(v)
+        self.assertEqual(t7_11(ol), 3)
+
+    def test_tie_returns_first_encountered(self):
+        ol = OrderedList(asc=True)
+        for v in [1, 2, 2, 3, 3]:
+            ol.add(v)
+        result = t7_11(ol)
+        self.assertIn(result, [2, 3])  # Either 2 or 3 is acceptable in a tie
+
+    def test_descending_order(self):
+        ol = OrderedList(asc=False)
+        for v in [5, 4, 4, 3, 2]:
+            ol.add(v)
+        self.assertEqual(t7_11(ol), 4)
 
 
 if __name__ == "__main__":
