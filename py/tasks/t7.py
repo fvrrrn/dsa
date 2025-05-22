@@ -1,4 +1,4 @@
-from typing import Any, Generic, Iterator, Literal, Optional, Protocol, TypeVar
+from typing import Any, Generic, Iterator, Optional, Protocol, TypeVar
 
 
 class Comparable(Protocol):
@@ -8,18 +8,6 @@ class Comparable(Protocol):
     def __le__(self, other: Any, /) -> bool: ...
     def __gt__(self, other: Any, /) -> bool: ...
     def __ge__(self, other: Any, /) -> bool: ...
-
-
-def is_comparable(obj: Any) -> bool:
-    try:
-        _ = obj < obj
-        _ = obj <= obj
-        _ = obj > obj
-        _ = obj >= obj
-        _ = obj == obj
-        return True
-    except (TypeError, AttributeError):
-        return False
 
 
 T = TypeVar("T", bound=Comparable)
@@ -63,7 +51,8 @@ class OrderedList(Generic[T]):
     def is_asc(self) -> bool:
         return self.__ascending
 
-    def compare(self, v1: T, v2: T) -> Literal[-1, 0, 1]:
+    # just to be safe there won't be type errors because of Literal[-1, 0, 1]
+    def compare(self, v1: T, v2: T) -> int:
         if v1 < v2:
             return -1
         if v1 == v2:
