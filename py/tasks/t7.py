@@ -172,6 +172,20 @@ class OrderedList(Generic[T]):
     def __str__(self):
         return " -> ".join(str(value) for value in self)
 
+    # greedy-iest way to do that
+    # but linked list optimizations barely improve speed
+    # it is best to have array-based implementation with binary search from the next task
+    def __contains__(self, sublist: "OrderedList[T]") -> bool:
+        if len(sublist) == 0:
+            return True
+
+        selflist = list(self)
+        for i in range(len(selflist) - len(sublist) + 1):
+            if selflist[i : i + len(sublist)] == list(sublist):
+                return True
+
+        return False
+
 
 class OrderedStringList(OrderedList[str]):
     def __init__(self, asc):

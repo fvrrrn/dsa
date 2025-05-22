@@ -120,6 +120,9 @@ def t7_9(ol1: OrderedList[T], ol2: OrderedList[T], asc: bool):
                     pointer1 = next(iterator1, None)
 
 
+# task 7.10 is OrderedList.__contains__
+
+
 class TestOrderedList(unittest.TestCase):
     def test_t7_8(self):
         ol = OrderedList(asc=False)
@@ -213,6 +216,88 @@ class TestOrderedList(unittest.TestCase):
         merged = t7_9(ol1, ol2, asc=True)
         result = list(merged)
         self.assertEqual(result, [1, 2, 2, 3, 3, 4])
+
+    def test_empty_sublist(self):
+        main = OrderedList(asc=True)
+        for v in [1, 2, 3]:
+            main.add(v)
+
+        sub = OrderedList(asc=True)
+        self.assertTrue(sub in main)
+
+    def test_exact_match(self):
+        main = OrderedList(asc=True)
+        for v in [1, 2, 3]:
+            main.add(v)
+
+        sub = OrderedList(asc=True)
+        for v in [1, 2, 3]:
+            sub.add(v)
+
+        self.assertTrue(sub in main)
+
+    def test_sublist_match_middle(self):
+        main = OrderedList(asc=True)
+        for v in [1, 2, 3, 4, 5]:
+            main.add(v)
+
+        sub = OrderedList(asc=True)
+        for v in [3, 4]:
+            sub.add(v)
+
+        self.assertTrue(sub in main)
+
+    def test_sublist_not_present(self):
+        main = OrderedList(asc=True)
+        for v in [1, 2, 3, 4, 5]:
+            main.add(v)
+
+        sub = OrderedList(asc=True)
+        for v in [2, 4]:
+            sub.add(v)
+
+        self.assertFalse(sub in main)
+
+    def test_sublist_larger_than_main(self):
+        main = OrderedList(asc=True)
+        for v in [1, 2]:
+            main.add(v)
+
+        sub = OrderedList(asc=True)
+        for v in [1, 2, 3]:
+            sub.add(v)
+
+        self.assertFalse(sub in main)
+
+    def test_empty_main_non_empty_sub(self):
+        main = OrderedList(asc=True)
+
+        sub = OrderedList(asc=True)
+        sub.add(1)
+
+        self.assertFalse(sub in main)
+
+    def test_direction_mismatch(self):
+        main = OrderedList(asc=True)
+        for v in [1, 2, 3, 4, 5]:
+            main.add(v)
+
+        sub = OrderedList(asc=False)
+        for v in [3, 2]:
+            sub.add(v)
+
+        self.assertFalse(sub in main)
+
+    def test_descending_contains(self):
+        main = OrderedList(asc=False)
+        for v in [5, 4, 3, 2, 1]:
+            main.add(v)
+
+        sub = OrderedList(asc=False)
+        for v in [4, 3, 2]:
+            sub.add(v)
+
+        self.assertTrue(sub in main)
 
 
 if __name__ == "__main__":
