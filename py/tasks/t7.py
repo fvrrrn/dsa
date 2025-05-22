@@ -47,7 +47,7 @@ class Dummy(Node):
 
 
 class OrderedList(Generic[T]):
-    def __init__(self, asc) -> None:
+    def __init__(self, asc, *values: T) -> None:
         self.head = Dummy()
         self.tail = self.head
         self.head.next = self.tail
@@ -56,6 +56,12 @@ class OrderedList(Generic[T]):
         self.tail.next = self.head
         self.size = 0
         self.__ascending = asc
+        for v in values:
+            self.add(v)
+
+    @property
+    def is_asc(self) -> bool:
+        return self.__ascending
 
     def compare(self, v1: T, v2: T) -> Literal[-1, 0, 1]:
         if v1 < v2:
