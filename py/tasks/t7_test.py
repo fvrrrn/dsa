@@ -84,7 +84,7 @@ class TestOrderedList(unittest.TestCase):
         ol = OrderedList(asc=True)
         for x in [1, 3, 2]:
             ol.add(x)
-        values = [node.value for node in reversed(ol)]
+        values = [value for value in reversed(ol)]
         self.assertEqual(values, [3, 2, 1])
 
     def test_str_representation(self):

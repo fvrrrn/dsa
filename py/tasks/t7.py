@@ -36,16 +36,34 @@ class Dummy(Node):
 
 class OrderedList(Generic[T]):
     def __init__(self, asc, *values: T) -> None:
-        self.head = Dummy()
-        self.tail = self.head
-        self.head.next = self.tail
-        self.tail.prev = self.head
-        self.head.prev = self.tail
-        self.tail.next = self.head
+        self.__head = Dummy()
+        self.__tail = self.__head
+        self.__head.next = self.__tail
+        self.__tail.prev = self.__head
+        self.__head.prev = self.__tail
+        self.__tail.next = self.__head
         self.size = 0
         self.__ascending = asc
         for v in values:
             self.add(v)
+
+    @property
+    def head(self) -> Optional[Node[T]]:
+        maybeNode = self.__head.next
+        match maybeNode:
+            case Dummy():
+                return None
+            case Node():
+                return maybeNode
+
+    @property
+    def tail(self):
+        maybeNode = self.__tail.prev
+        match maybeNode:
+            case Dummy():
+                return None
+            case Node():
+                return maybeNode
 
     @property
     def is_asc(self) -> bool:
@@ -60,7 +78,7 @@ class OrderedList(Generic[T]):
         return 1
 
     def add(self, value: T) -> None:
-        node = self.head.next
+        node = self.__head.next
         while True:
             match node:
                 case Dummy():
@@ -82,17 +100,17 @@ class OrderedList(Generic[T]):
 
     def unsafe_append(self, value: T) -> Node[T]:
         node = Node(value)
-        node.prev = self.tail.prev
-        node.next = self.tail
-        self.tail.prev.next = node
-        self.tail.prev = node
+        node.prev = self.__tail.prev
+        node.next = self.__tail
+        self.__tail.prev.next = node
+        self.__tail.prev = node
         self.size += 1
         return node
 
     def find(self, val: T) -> Optional[Node[T]]:
-        node = self.head.next
+        node = self.__head.next
 
-        if not isinstance(self.head.next, Dummy):
+        if not isinstance(self.__head.next, Dummy):
             # node=Node(2) and val=1 return None because 2 is the smallest number
             if self.__ascending and self.compare(val, node.value) == -1:
                 return None
@@ -118,10 +136,10 @@ class OrderedList(Generic[T]):
 
     def clean(self, asc):
         self.__ascending = asc
-        self.head.next = self.tail
-        self.tail.prev = self.head
-        self.head.prev = self.tail
-        self.tail.next = self.head
+        self.__head.next = self.__tail
+        self.__tail.prev = self.__head
+        self.__head.prev = self.__tail
+        self.__tail.next = self.__head
         self.size = 0
 
     def len(self):
@@ -129,14 +147,14 @@ class OrderedList(Generic[T]):
 
     def get_all(self):
         r = []
-        node = self.head.next
+        node = self.__head.next
         while not isinstance(node, Dummy):
             r.append(node)
             node = node.next
         return r
 
     def __iter__(self) -> Iterator[T]:
-        node = self.head.next
+        node = self.__head.next
         while True:
             match node:
                 case Dummy():
@@ -146,7 +164,7 @@ class OrderedList(Generic[T]):
                     node = node.next
 
     def __reversed__(self) -> Iterator[T]:
-        node = self.tail.prev
+        node = self.__tail.prev
         while True:
             match node:
                 case Dummy():
