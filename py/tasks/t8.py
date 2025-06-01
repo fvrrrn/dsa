@@ -7,6 +7,7 @@ class HashTable:
         self.__modulo = 1234567891
         # NOTE: 67 is the closest highest prime to 62 which is 23 lowercase latin letters + 23 uppercase + 10 digits
         self.__base = 67
+        self.__size = 0
 
     # polynomial rolling hash function
     def hash_fun(self, value: str) -> int:
@@ -34,6 +35,9 @@ class HashTable:
             case None:
                 return None
             case index:
+                # increase only if element not in table already
+                if self.slots[index] != value:
+                    self.__size += 1
                 self.slots[index] = value  # type: ignore cannot assign str to None
                 return index
 
@@ -44,3 +48,6 @@ class HashTable:
                 return index
             index = (index + self.step) % self.size
         return None
+
+    def __len__(self) -> int:
+        return self.__size
