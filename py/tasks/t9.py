@@ -4,9 +4,8 @@ T = TypeVar("T")
 
 
 class NativeDictionary[T]:
-    def __init__(self, sz, stp):
+    def __init__(self, sz):
         self.size = sz
-        self.step = stp
         self.slots: list[str | None] = [None] * self.size
         self.values: list[T | None] = [None] * self.size
         self.__modulo = 1234567891  # closest prime to 2**32 which is max int
@@ -22,34 +21,28 @@ class NativeDictionary[T]:
         return hash_value
 
     def is_key(self, key: str) -> bool:
-        return self.slots[self.hash_fun(key) % self.__size] is not None
-
-    def seek_slot(self, key: str) -> int | None:
-        index = self.hash_fun(key) % self.size
-        # also try `self.size / gcd(self.size, self.step)`
-        for _ in range(self.size // self.step + 1):
-            if self.slots[index] == None or self.slots[index] == key:
-                return index
-            index = (index + self.step) % self.size
-        return None
+        return (
+            self.slots[self.hash_fun(key) % self.size] is not None
+            if self.__size > 0
+            else False
+        )
 
     def put(self, key: str, value: T) -> int | None:
-        match self.seek_slot(key):
-            case None:
-                return None
-            case index:
-                self.__size += self.slots[index] != key
-                self.slots[index] = key
-                self.values[index] = value
-                return index
+        index = self.hash_fun(key) % self.size
+        self.__size += self.slots[index] != key
+        self.slots[index] = key
+        self.values[index] = value
+        return index
 
     def get(self, key: str) -> T | None:
         index = self.hash_fun(key) % self.size
-        for _ in range(self.size // self.step + 1):
-            if self.slots[index] == key:
-                return self.values[index]
-            index = (index + self.step) % self.size
-        return None
+        return self.values[index]
 
     def __len__(self) -> int:
         return self.__size
+
+    def __setitem__(self, key: str, value: T) -> int | None:
+        return self.put(key, value)
+
+    def __getitem__(self, key: str) -> T | None:
+        return self.get(key)
