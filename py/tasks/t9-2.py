@@ -79,6 +79,81 @@ class OrderedDictionary[K, V]:
         return str(self.tuples)
 
 
+class BitDictionary[T]:
+    def __init__(self, sz=16):
+        self.size = BitDictionary.__round_power_2(sz)
+        # TODO: check what step optimization can be made with bits
+        self.step = 1
+        self.slots: list[str | None] = [None] * self.size
+        self.values: list[T | None] = [None] * self.size
+        self.__base = 64
+        self.__size = 0
+
+    @staticmethod
+    def __round_power_2(n: int) -> int:
+        # 1 -> 1, 5 -> 8, 15 -> 16, 32 -> 32
+        if n <= 1:
+            return 1
+        return 1 << (n - 1).bit_length()
+
+    def hash_fun(self, key: str) -> int:
+        hash_value = 0
+        power = 1
+        for c in reversed(key):
+            hash_value += ord(c) * power
+            power *= self.__base
+        return hash_value & (self.size - 1)
+
+    def __slots_iter(self, key: str) -> Iterator[int]:
+        # because size if power of 2
+        start = self.hash_fun(key)
+        for i in range(self.size):
+            yield (start + i * self.step) & (self.size - 1)
+
+    def seek_slot(self, key: str) -> int | None:
+        for index in self.__slots_iter(key):
+            if self.slots[index] == None or self.slots[index] == key:
+                return index
+        return None
+
+    def is_key(self, key: str) -> bool:
+        for index in self.__slots_iter(key):
+            if self.slots[index] == key:
+                return True
+        return False
+
+    # TODO: add Maybe[int] after server tests
+    def put(self, key: str, value: T):
+        if (index := self.seek_slot(key)) is not None:
+            self.__size += self.slots[index] != key
+            # TODO: with dynamic resizing change step on each self.size change
+            # TODO: also __round_power_2
+            self.slots[index] = key
+            self.values[index] = value
+            return index
+
+    def get(self, key: str) -> T | None:
+        for index in self.__slots_iter(key):
+            if self.slots[index] == key:
+                return self.values[index]
+
+    def __len__(self) -> int:
+        return self.__size
+
+    def __setitem__(self, key: str, value: T) -> int | None:
+        return self.put(key, value)
+
+    def __getitem__(self, key: str) -> T | None:
+        return self.get(key)
+
+    def __delitem__(self, key: str) -> int | None:
+        for index in self.__slots_iter(key):
+            if self.slots[index] == key:
+                self.values[index] = None
+                self.slots[index] = None
+                return index
+
+
 class TestOrderedDictionary(unittest.TestCase):
     def test_insert_and_get(self):
         d = OrderedDictionary[str, int]()
@@ -113,6 +188,54 @@ class TestOrderedDictionary(unittest.TestCase):
         s = str(d)
         self.assertIn("x", s)
         self.assertIn("y", s)
+
+
+class TestBitDictionary(unittest.TestCase):
+    def test_put_and_get(self):
+        d = BitDictionary[int]()
+        d.put("101", 42)
+        d.put("111", 84)
+        self.assertEqual(d.get("101"), 42)
+        self.assertEqual(d.get("111"), 84)
+        self.assertIsNone(d.get("000"))
+
+    def test_setitem_getitem(self):
+        d = BitDictionary[int]()
+        d["000"] = 100
+        d["001"] = 200
+        self.assertEqual(d["000"], 100)
+        self.assertEqual(d["001"], 200)
+        self.assertIsNone(d["010"])
+
+    def test_replacement(self):
+        d = BitDictionary[int]()
+        d["001"] = 1
+        d["001"] = 2
+        self.assertEqual(d["001"], 2)
+        self.assertEqual(len(d), 1)
+
+    def test_is_key(self):
+        d = BitDictionary[int]()
+        d["111"] = 5
+        self.assertTrue(d.is_key("111"))
+        self.assertFalse(d.is_key("000"))
+
+    def test_len(self):
+        d = BitDictionary[int]()
+        self.assertEqual(len(d), 0)
+        d["0"] = 1
+        d["1"] = 2
+        self.assertEqual(len(d), 2)
+        d["1"] = 3
+        self.assertEqual(len(d), 2)
+
+    def test_del(self):
+        d = BitDictionary[int]()
+        d["key"] = 123
+        self.assertEqual(d["key"], 123)
+        del d["key"]
+        self.assertIsNone(d["key"])
+        self.assertEqual(len(d), 1)
 
 
 if __name__ == "__main__":
