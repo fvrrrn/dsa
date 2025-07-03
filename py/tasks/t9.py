@@ -1,11 +1,24 @@
-from typing import TypeVar
+from math import gcd
+from typing import Iterator, TypeVar
 
 T = TypeVar("T")
+
+# TODO: use DynHashTable example when moving NativeDictionary to demonstration
+# that way __setitem__ is more likely to record element
+
+
+# Euler's totient function always returns at least 1 int if n > 1
+def coprime(n: int) -> int:
+    for i in range(1, n):
+        if gcd(i, n) == 1:
+            return i
+    assert False, f"No coprime step found for size={n}"
 
 
 class NativeDictionary[T]:
     def __init__(self, sz):
         self.size = sz
+        self.step = coprime(sz) if self.size > 1 else 1
         self.slots: list[str | None] = [None] * self.size
         self.values: list[T | None] = [None] * self.size
         self.__modulo = 1234567891  # closest prime to 2**32 which is max int
@@ -20,23 +33,36 @@ class NativeDictionary[T]:
             power = (power * self.__base) % self.__modulo
         return hash_value
 
-    def is_key(self, key: str) -> bool:
-        return (
-            self.slots[self.hash_fun(key) % self.size] is not None
-            if self.__size > 0
-            else False
-        )
+    def __slots_iter(self, key: str) -> Iterator[int]:
+        start = self.hash_fun(key) % self.size
+        for i in range(self.size // gcd(self.size, self.step)):
+            yield (start + i * self.step) % self.size
 
-    def put(self, key: str, value: T) -> int | None:
-        index = self.hash_fun(key) % self.size
-        self.__size += self.slots[index] != key
-        self.slots[index] = key
-        self.values[index] = value
-        return index
+    def seek_slot(self, key: str) -> int | None:
+        for index in self.__slots_iter(key):
+            if self.slots[index] == None or self.slots[index] == key:
+                return index
+        return None
+
+    def is_key(self, key: str) -> bool:
+        for index in self.__slots_iter(key):
+            if self.slots[index] == key:
+                return True
+        return False
+
+    # TODO: add Maybe[int] after server tests
+    def put(self, key: str, value: T):
+        if (index := self.seek_slot(key)) is not None:
+            self.__size += self.slots[index] != key
+            # TODO: with dynamic resizing change step on each self.size change
+            self.slots[index] = key
+            self.values[index] = value
+            return index
 
     def get(self, key: str) -> T | None:
-        index = self.hash_fun(key) % self.size
-        return self.values[index]
+        for index in self.__slots_iter(key):
+            if self.slots[index] == key:
+                return self.values[index]
 
     def __len__(self) -> int:
         return self.__size
