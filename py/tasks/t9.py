@@ -31,10 +31,10 @@ class NativeDictionary[T]:
         for c in reversed(key):
             hash_value = (hash_value + ord(c) * power) % self.__modulo
             power = (power * self.__base) % self.__modulo
-        return hash_value
+        return hash_value % self.size
 
     def __slots_iter(self, key: str) -> Iterator[int]:
-        start = self.hash_fun(key) % self.size
+        start = self.hash_fun(key)
         for i in range(self.size // gcd(self.size, self.step)):
             yield (start + i * self.step) % self.size
 
