@@ -59,6 +59,16 @@ class TestPowerSet(unittest.TestCase):
         self.assertNotIn(3, result)
         self.assertNotIn(4, result)
 
+        a = PowerSet()
+        b = PowerSet()
+        for i in range(100000):
+            a.put(i)
+            b.put(i)
+        self.assertEqual(a.intersection(b), a)
+        self.assertEqual(a.intersection(b), b)
+        self.assertEqual(b.intersection(a), a)
+        self.assertEqual(b.intersection(a), b)
+
     def test_union(self):
         a = PowerSet()
         b = PowerSet()
@@ -93,6 +103,16 @@ class TestPowerSet(unittest.TestCase):
         self.assertIn(3, result)
         self.assertIn(4, result)
 
+        a = PowerSet()
+        b = PowerSet()
+        for i in range(100000):
+            a.put(i)
+            b.put(i)
+        self.assertEqual(a.union(b), a)
+        self.assertEqual(a.union(b), b)
+        self.assertEqual(b.union(a), a)
+        self.assertEqual(b.union(a), b)
+
     def test_difference(self):
         a = PowerSet()
         b = PowerSet()
@@ -125,6 +145,14 @@ class TestPowerSet(unittest.TestCase):
         self.assertIn(3, result)
         self.assertIn(4, result)
 
+        a = PowerSet()
+        b = PowerSet()
+        for i in range(100000):
+            a.put(i)
+            b.put(i)
+        self.assertEqual(a.difference(b), PowerSet())
+        self.assertEqual(b.difference(a), PowerSet())
+
     def test_issubset(self):
         a = PowerSet()
         b = PowerSet()
@@ -147,6 +175,14 @@ class TestPowerSet(unittest.TestCase):
         self.assertTrue(PowerSet(1, 2).issubset(PowerSet()))
 
         self.assertTrue(PowerSet(1, 2).issubset(PowerSet(1, 2)))
+
+        a = PowerSet()
+        b = PowerSet()
+        for i in range(100000):
+            a.put(i)
+            b.put(i)
+        self.assertTrue(a.issubset(b))
+        self.assertTrue(b.issubset(a))
 
     def test_equals(self):
         a = PowerSet()
@@ -171,6 +207,13 @@ class TestPowerSet(unittest.TestCase):
 
         self.assertTrue(PowerSet(1, 2).issubset(PowerSet(1, 2)))
 
+        a = PowerSet()
+        b = PowerSet()
+        for i in range(100000):
+            a.put(i)
+            b.put(i)
+        self.assertEqual(a, b)
+
     def test_len(self):
         s = PowerSet()
         self.assertEqual(len(s), 0)
@@ -182,6 +225,11 @@ class TestPowerSet(unittest.TestCase):
         self.assertEqual(len(s), 1)
         s.remove("a")
         self.assertEqual(len(s), 0)
+
+        a = PowerSet()
+        for i in range(100000):
+            a.put(i)
+        self.assertEqual(len(a), 100000)
 
 
 if __name__ == "__main__":
