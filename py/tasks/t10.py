@@ -1,5 +1,9 @@
 from collections import defaultdict
-from itertools import zip_longest
+from typing import Dict, Generic, Iterator, TypeVar
+
+T = TypeVar("T")
+
+
 from typing import Dict, Generic, Iterator, TypeVar
 
 T = TypeVar("T")
@@ -7,7 +11,7 @@ T = TypeVar("T")
 
 class PowerSet(Generic[T]):
     def __init__(self, *elements: T) -> None:
-        self.elements: Dict[T, int] = defaultdict(int)
+        self.elements: Dict[T, int] = {}
         for e in elements:
             self.put(e)
 
@@ -17,9 +21,8 @@ class PowerSet(Generic[T]):
     def size(self) -> int:
         return len(self)
 
-    def put(self, element: T, value=1) -> int:
-        self[element] = value
-        return self[element]
+    def put(self, element: T) -> None:
+        self.elements[element] = 1
 
     def get(self, element: T) -> bool:
         return element in self
@@ -28,21 +31,23 @@ class PowerSet(Generic[T]):
         return self.__delitem__(element)
 
     def __contains__(self, element: T) -> bool:
-        # prevent creating key by checking if element in defaultdict
-        return element in self.elements and self.elements[element] > 0
-
-    def __getitem__(self, element: T) -> int:
-        return self.elements[element]
-
-    def __setitem__(self, element: T, value: int) -> int:
-        self.elements[element] = value
-        return self.elements[element]
+        return element in self.elements and self.elements[element] == 1
 
     def __delitem__(self, element: T) -> bool:
-        # will create and delete key
-        flag = self.elements[element]
-        del self.elements[element]
-        return bool(flag)
+        if element in self.elements:
+            del self.elements[element]
+            return True
+        return False
+
+    def __getitem__(self, element: T) -> int:
+        return self.elements.get(element, 0)
+
+    def __setitem__(self, element: T, value: int) -> int:
+        self.elements[element] = 1 if value else 0
+        # remove element if value is 0 to avoid having existing element with value 0
+        if self.elements[element] == 0:
+            del self.elements[element]
+        return self.elements.get(element, 0)
 
     def intersection(self, set2: "PowerSet[T]") -> "PowerSet[T]":
         set3 = PowerSet()

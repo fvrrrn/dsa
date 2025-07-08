@@ -11,12 +11,7 @@ class TestPowerSet(unittest.TestCase):
         s.put("b")
         self.assertTrue("a" in s)
         self.assertTrue("b" in s)
-        self.assertEqual(s["b"], 1)
-        self.assertFalse("c" in s)
-        # check if __getitem__ creates key...
-        self.assertEqual(s["c"], 0)
-        self.assertIn("c", s.elements)
-        # ... but it does not mean it is in set
+        self.assertTrue(s.get("b"))
         self.assertFalse("c" in s)
 
     def test_remove(self):
