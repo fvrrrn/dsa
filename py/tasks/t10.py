@@ -52,14 +52,12 @@ class PowerSet(Generic[T]):
         if self.elements[element] == 0:
             del self.elements[element]
 
-    def intersection(self, set2: "PowerSet[T]") -> "PowerSet[T]":
+    def intersection(self, *sets: "PowerSet[T]") -> "PowerSet[T]":
         set3 = PowerSet()
         for e in self:
-            if e in set2:
-                set3.put(e)
-        for e in set2:
-            if e in self:
-                set3.put(e)
+            for s in sets:
+                if e in s:
+                    set3.put(e)
         return set3
 
     def union(self, set2: "PowerSet[T]") -> "PowerSet[T]":
@@ -95,3 +93,6 @@ class PowerSet(Generic[T]):
 
     def equals(self, set2: "PowerSet[T]") -> bool:
         return self == set2
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.elements})"

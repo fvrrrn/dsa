@@ -11,11 +11,38 @@ T = TypeVar("T")
 # SPACE COMPLEXITY: O(n*m)
 # REFLECTION:
 #   - for `Bag` add option to create pairs only for keys and yield their count
-# CODE: t10.py#L32
+# CODE:
 # def cartesian_product(self, set2: "PowerSet[T]") -> Iterator[Tuple[T, T]]:
 #     for e1 in self:
 #         for e2 in set2:
 #             yield (e1, e2)
+
+
+# TASK: 1.10.5*
+# TITLE: Intersection of n sets where n is in N, m is length of n-th set
+# TIME COMPLEXITY: O(n*m) without collisions
+# SPACE COMPLEXITY: O(m_0) no more elements than before
+# REFLECTION:
+#   - TODO: make single call set3[e1]
+#   - finding elements within each set can be parallelized
+#   - ternary is unclear but the best I can come up with as of now
+# CODE:
+# def intersection(self, *sets: "PowerSet[T]") -> "Bag[T]":
+#     set3 = Bag()
+#     for e1, c1 in self.elements.items():
+#         count = 0
+#         for s in sets:
+#             count = min(count if count > 0 else c1, s[e1])
+#         if count:
+#             set3[e1] = min(set3[e1] if set3[e1] > 0 else count, count)
+#     return set3
+# def intersection(self, *sets: "PowerSet[T]") -> "PowerSet[T]":
+#     set3 = PowerSet()
+#     for e in self:
+#         for s in sets:
+#             if e in s:
+#                 set3.put(e)
+#     return set3
 
 
 # TASK: 1.10.6*
@@ -60,14 +87,14 @@ class Bag(Generic[T], PowerSet[T]):
                 self.elements[element] -= 1
                 return True
 
-    def intersection(self, set2: "PowerSet[T]") -> "Bag[T]":
+    def intersection(self, *sets: "PowerSet[T]") -> "Bag[T]":
         set3 = Bag()
-        for e in self:
-            if e in set2:
-                set3[e] = min(self[e], set2[e])
-        for e in set2:
-            if e in self:
-                set3[e] = min(self[e], set2[e])
+        for e1, c1 in self.elements.items():
+            count = 0
+            for s in sets:
+                count = min(count if count > 0 else c1, s[e1])
+            if count:
+                set3[e1] = min(set3[e1] if set3[e1] > 0 else count, count)
         return set3
 
     def union(self, set2: "PowerSet[T]") -> "Bag[T]":
@@ -114,14 +141,10 @@ class TestBag(unittest.TestCase):
         self.assertEqual(self.bag1["d"], 2)
 
     def test_remove_and_delitem(self):
-        self.assertTrue(self.bag1.remove("b"))  # b count goes from 2 to 1
-        self.assertTrue(
-            self.bag1.remove("b")
-        )  # b count goes from 1 to 0, should be deleted
+        self.assertTrue(self.bag1.remove("b"))
+        self.assertTrue(self.bag1.remove("b"))
         self.assertFalse("b" in self.bag1)
-        self.assertFalse(
-            self.bag1.remove("b")
-        )  # Removing nonexistent now returns False
+        self.assertFalse(self.bag1.remove("b"))
 
     def test_intersection(self):
         result = self.bag1.intersection(self.bag2)
@@ -141,7 +164,7 @@ class TestBag(unittest.TestCase):
         result = self.bag1.difference(self.bag2)
         self.assertEqual(result["a"], 1)
         self.assertNotIn("c", result)
-        self.assertEqual(result["b"], 0)  # max(2 - 2, 0) = 0, should be skipped
+        self.assertEqual(result["b"], 0)
 
     def test_issubset(self):
         bag3 = Bag("b", "c")
@@ -153,6 +176,35 @@ class TestBag(unittest.TestCase):
         self.assertEqual(self.bag1, bag1_copy)
         bag1_copy.put("c")
         self.assertNotEqual(self.bag1, bag1_copy)
+
+    def test_multiple_intersection_common_elements(self):
+        bag1 = Bag("a", "a", "b")
+        bag2 = Bag("a", "a", "c")
+        bag3 = Bag("a", "d")
+        result = bag1.intersection(bag2, bag3)
+        self.assertEqual(result, Bag("a"))
+
+        bag1 = Bag("x", "y")
+        bag2 = Bag("y", "z")
+        bag3 = Bag("a", "b")
+        result = bag1.intersection(bag2, bag3)
+        self.assertEqual(result, Bag())
+
+        bag1 = Bag("x", "x", "x", "y")
+        bag2 = Bag("x", "x", "z")
+        bag3 = Bag("x", "x", "x", "x")
+        result = bag1.intersection(bag2, bag3)
+        self.assertEqual(result, Bag("x", "x"))
+
+        bag1 = Bag("a", "b", "c")
+        bag2 = Bag("a", "b")
+        bag3 = Bag()
+        result = bag1.intersection(bag2, bag3)
+        self.assertEqual(result, Bag())
+
+        bag = Bag("a", "a", "b")
+        result = bag.intersection(bag, bag, bag)
+        self.assertEqual(result, Bag("a", "a", "b"))
 
 
 if __name__ == "__main__":
