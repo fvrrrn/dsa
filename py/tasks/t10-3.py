@@ -124,11 +124,11 @@ class TestPowerSet(unittest.TestCase):
         self.assertEqual(len(result), 0)
 
         result = PowerSet(1, 2).difference(PowerSet(3, 4))
-        self.assertEqual(len(result), 4)
+        self.assertEqual(len(result), 2)
         self.assertIn(1, result)
         self.assertIn(2, result)
-        self.assertIn(3, result)
-        self.assertIn(4, result)
+        self.assertNotIn(3, result)
+        self.assertNotIn(4, result)
 
         result = PowerSet(1, 2).difference(PowerSet())
         self.assertEqual(len(result), 2)
@@ -136,9 +136,9 @@ class TestPowerSet(unittest.TestCase):
         self.assertIn(2, result)
 
         result = PowerSet().difference(PowerSet(3, 4))
-        self.assertEqual(len(result), 2)
-        self.assertIn(3, result)
-        self.assertIn(4, result)
+        self.assertEqual(len(result), 0)
+        self.assertNotIn(3, result)
+        self.assertNotIn(4, result)
 
         a = PowerSet()
         b = PowerSet()
@@ -170,6 +170,8 @@ class TestPowerSet(unittest.TestCase):
         self.assertTrue(PowerSet(1, 2).issubset(PowerSet()))
 
         self.assertTrue(PowerSet(1, 2).issubset(PowerSet(1, 2)))
+        self.assertTrue(PowerSet(1, 2, 3).issubset(PowerSet(1, 2)))
+        self.assertFalse(PowerSet(1, 2).issubset(PowerSet(1, 2, 3)))
 
         a = PowerSet()
         b = PowerSet()

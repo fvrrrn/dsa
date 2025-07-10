@@ -1,4 +1,3 @@
-from collections import defaultdict
 from typing import Dict, Generic, Iterator, TypeVar
 
 T = TypeVar("T")
@@ -31,7 +30,7 @@ class PowerSet(Generic[T]):
         return self.__delitem__(element)
 
     def __contains__(self, element: T) -> bool:
-        return element in self.elements and self.elements[element] == 1
+        return bool(self.elements.get(element, 0))
 
     def __delitem__(self, element: T) -> bool:
         if element in self.elements:
@@ -42,12 +41,11 @@ class PowerSet(Generic[T]):
     def __getitem__(self, element: T) -> int:
         return self.elements.get(element, 0)
 
-    def __setitem__(self, element: T, value: int) -> int:
+    def __setitem__(self, element: T, value: int) -> None:
         self.elements[element] = 1 if value else 0
         # remove element if value is 0 to avoid having existing element with value 0
         if self.elements[element] == 0:
             del self.elements[element]
-        return self.elements.get(element, 0)
 
     def intersection(self, set2: "PowerSet[T]") -> "PowerSet[T]":
         set3 = PowerSet()
@@ -71,9 +69,6 @@ class PowerSet(Generic[T]):
         set3 = PowerSet()
         for e in self:
             if e not in set2:
-                set3.put(e)
-        for e in set2:
-            if e not in self:
                 set3.put(e)
         return set3
 
