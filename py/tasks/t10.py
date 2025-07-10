@@ -1,4 +1,4 @@
-from typing import Dict, Generic, Iterator, TypeVar
+from typing import Dict, Generic, Iterator, Tuple, TypeVar
 
 T = TypeVar("T")
 
@@ -28,6 +28,11 @@ class PowerSet(Generic[T]):
 
     def remove(self, element: T) -> bool:
         return self.__delitem__(element)
+
+    def cartesian_product(self, set2: "PowerSet[T]") -> Iterator[Tuple[T, T]]:
+        for e1 in self:
+            for e2 in set2:
+                yield (e1, e2)
 
     def __contains__(self, element: T) -> bool:
         return bool(self.elements.get(element, 0))

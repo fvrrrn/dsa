@@ -5,14 +5,43 @@ from t10 import PowerSet
 
 T = TypeVar("T")
 
+# TASK: 1.10.4*
+# TITLE: Cartesian product of two sets
+# TIME COMPLEXITY: O(n*m)
+# SPACE COMPLEXITY: O(n*m)
+# REFLECTION:
+#   - for `Bag` add option to create pairs only for keys and yield their count
+# CODE: t10.py#L32
+# def cartesian_product(self, set2: "PowerSet[T]") -> Iterator[Tuple[T, T]]:
+#     for e1 in self:
+#         for e2 in set2:
+#             yield (e1, e2)
+
 
 # TASK: 1.10.6*
 # TITLE: Multiset `Bag` with frequency operations
-# Time complexity:
-#   - put, get, remove, __getitem__, __setitem__ — O(1) average
-#   - intersection, union, difference — O(n + m) where n, m are sizes of the input sets
-#   - issubset, __eq__ — O(n)
-# Space complexity: O(u) where u is the number of unique elements in the bag
+# TIME COMPLEXITY:
+#   - put, __delitem__, __getitem__, __setitem__:
+#       O(n) if collision
+#       o(1) if load factor (s.length/s.capacity) is below certain value (which I don't know)
+#       Theta(1/(1-s.length/s.capacity) if hash function creates uniform distribution
+#       Omega(1) if no collision
+#   - intersection, union, difference: where n is self.length, m is set2.length
+#       O(n + m)
+#       o(n + m)
+#       Theta(n + m)
+#       Omega(n + m)
+#   - issubset, __eq__:
+#       O(n)
+#       o(n)
+#       Theta(n)
+#       Omega(1) if first element is not in set
+# SPACE COMPLEXITY: O(n)
+# REFLECTION:
+#   - TODO: instead of `for e in set2` use `for k, v in set2.elements.items() so not to call O(n) set2[e] later
+#   - defaultdict can be used to have all keys set to 0 be default to avoid None check
+#   - difference_keys can be added to have a method that returns difference discarding how many `e` within given set
+# CODE:
 class Bag(Generic[T], PowerSet[T]):
     def put(self, element: T, value=1) -> None:
         self[element] += value
