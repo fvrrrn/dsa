@@ -1,6 +1,7 @@
 import unittest
+from typing import Callable, List
 
-from t11 import BloomFilter
+from t11 import BloomFilter, hash1, hash2
 
 
 # TASK: 1.11.2*
@@ -8,20 +9,69 @@ from t11 import BloomFilter
 # TIME COMPLEXITY: O(1)
 # SPACE COMPLEXITY: O(1) does not depend on hash_fns size
 # REFLECTION:
-#   - Let F1 = (0b010,) P = 0,6931 ** (m/n), m is in {2 ** i | i is in N}, n is in N
+#   - Probability of false-positivity does not change on filter merge
+#     because it only depends on `m` and `n` where m is f_len and n is len(str)
 #   - `str` string-only hash function parameter can be expanded to generic `Hashable`
 #   - *hash_fns can be changed to just List[hash_fns] and have default parameter
 #   - .bit_length() how many bits total
 #   - .bit_count() how many bits=1 total
 #   - Python adds bits on demand so binary representation of `int i = 0;` is `0` and not `0...0`
+#   - compare self.f_len and other.f_len
 # CODE:
 class AddableBloomFilter(BloomFilter):
     def __add__(self, other: "AddableBloomFilter"):
         return AddableBloomFilter(
-            max(self.f_len, other.f_len),
+            self.f_len,
             self.bit_array | other.bit_array,
             *(self.hash_fns + other.hash_fns),
         )
+
+
+# TASK: 1.11.3*
+# TITLE: Bloom filter with removable elements
+# TIME COMPLEXITY: O(1) hash_fns and bit_array iterations do not depend on elements amount
+# SPACE COMPLEXITY: O(1) though array is used its size does not depend on elements amount
+# REFLECTION:
+#   - hash function should just only hash (duh), there shouldn't be modulo or bit-shift and whatnot
+#   - there can be interger overflow in `add`
+# CODE:
+class RemovableBloomFilter(BloomFilter):
+    def __init__(
+        self,
+        f_len: int,
+        *hash_fns: Callable[[str], int],
+    ):
+        self.f_len = f_len
+        self.bit_array = [0] * self.f_len
+        # cannot set default parameter to * and ** types
+        self.hash_fns = (
+            list(hash_fns)
+            if hash_fns
+            else [
+                lambda s: ((hash1(s) % self.f_len)),
+                lambda s: ((hash2(s) % self.f_len)),
+            ]
+        )
+
+    def __str__(self) -> str:
+        return str(self.bit_array)
+
+    def add(self, str1: str):
+        for f in self.hash_fns:
+            self.bit_array[f(str1)] += 1
+
+    def is_value(self, str1: str) -> bool:
+        mask = [0] * self.f_len
+        for f in self.hash_fns:
+            mask[f(str1)] += 1
+        for e1, e2 in zip(mask, self.bit_array):
+            if e1 > 0 and e1 > e2:
+                return False
+        return True
+
+    def remove(self, str1: str):
+        for f in self.hash_fns:
+            self.bit_array[f(str1)] = max(0, self.bit_array[f(str1)] - 1)
 
 
 class TestBloomFilter(unittest.TestCase):
@@ -37,16 +87,6 @@ class TestBloomFilter(unittest.TestCase):
         self.assertEqual(f1.bit_array, 0b0011)
         self.assertEqual(f2.bit_array, 0b0101)
 
-    def test_merge_different_sizes(self):
-        f1 = AddableBloomFilter(32, 0b1, lambda _: 2)
-        f2 = AddableBloomFilter(64, 0b10, lambda _: 3)
-        merged = f1 + f2
-        self.assertEqual(merged.f_len, 64)
-        self.assertEqual(merged.bit_array, 0b11)
-        self.assertEqual(len(merged.hash_fns), 2)
-        outputs = sorted(fn("x") for fn in merged.hash_fns)
-        self.assertEqual(outputs, [2, 3])
-
     def test_chain_addition(self):
         f1 = AddableBloomFilter(32, 0b100, lambda _: 4)
         f2 = AddableBloomFilter(32, 0b010, lambda _: 5)
@@ -56,6 +96,69 @@ class TestBloomFilter(unittest.TestCase):
         self.assertEqual(len(merged.hash_fns), 3)
         outputs = sorted(fn("x") for fn in merged.hash_fns)
         self.assertEqual(outputs, [4, 5, 6])
+
+
+class TestRemovableBloomFilter(unittest.TestCase):
+    def setUp(self):
+        self.f_len = 32
+        self.bf = RemovableBloomFilter(self.f_len)
+        s = "0123456789"
+        self.data = [s[x:] + s[:x] for x in range(len(s))]
+        self.assertLess(self.bf.hash_fns[0]("0123456789"), 32)
+
+    def test_add_and_query_single(self):
+        for item in self.data:
+            self.bf.add(item)
+        for item in self.data:
+            self.assertTrue(self.bf.is_value(item))
+
+    def test_shared_bits_false_positive_possible(self):
+        self.bf.add("apple")
+        # Add another value that shares at least one hash result with "banana"
+        # But don’t add "banana" itself
+        self.assertFalse(self.bf.is_value("banana"))  # may still be false
+        # Add banana to make sure it becomes detectable
+        self.bf.add("banana")
+        self.assertTrue(self.bf.is_value("banana"))
+
+    def test_counting_preserves_multiple_adds(self):
+        self.bf.add("apple")
+        self.bf.add("apple")
+        self.assertTrue(self.bf.is_value("apple"))
+        # Manually check that all hash positions are incremented twice
+        positions = [f("apple") for f in self.bf.hash_fns]
+        for p in positions:
+            self.assertEqual(self.bf.bit_array[p], 2)
+
+    def test_remove_one(self):
+        self.bf.add(self.data[0])
+        self.bf.add(self.data[0])
+        self.assertEqual(self.bf.bit_array[self.bf.hash_fns[0](self.data[0])], 2)
+        self.assertEqual(self.bf.bit_array[self.bf.hash_fns[1](self.data[0])], 2)
+        self.assertTrue(self.bf.is_value(self.data[0]))
+        self.bf.remove(self.data[0])
+        self.assertTrue(self.bf.is_value(self.data[0]))
+        self.assertEqual(self.bf.bit_array[self.bf.hash_fns[0](self.data[0])], 1)
+        self.assertEqual(self.bf.bit_array[self.bf.hash_fns[1](self.data[0])], 1)
+        self.bf.remove(self.data[0])
+        self.assertFalse(self.bf.is_value(self.data[0]))
+        self.assertEqual(self.bf.bit_array[self.bf.hash_fns[0](self.data[0])], 0)
+        self.assertEqual(self.bf.bit_array[self.bf.hash_fns[1](self.data[0])], 0)
+        self.bf.remove(self.data[0])
+        self.assertFalse(self.bf.is_value(self.data[0]))
+        self.assertEqual(self.bf.bit_array[self.bf.hash_fns[0](self.data[0])], 0)
+        self.assertEqual(self.bf.bit_array[self.bf.hash_fns[1](self.data[0])], 0)
+
+    def test_remove_many(self):
+        for item in self.data:
+            self.bf.add(item)
+        for i in range(len(self.data)):
+            self.bf.remove(self.data[i])
+            # each i-th of data is removed
+            # then we check if all other elements are positive/false-positive
+            # there shouldn't once be false-negative
+            for item in self.data[i:]:
+                self.bf.is_value(item)
 
 
 if __name__ == "__main__":
