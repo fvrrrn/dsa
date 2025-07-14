@@ -19,9 +19,9 @@ class TestBloomFilter(unittest.TestCase):
             self.assertLess(h2, self.bf.f_len)
 
     def test_add_and_query(self):
-        self.assertFalse(self.bf.is_value("123"))
-        self.bf.add("123")
-        self.assertTrue(self.bf.is_value("123"))
+        self.assertFalse(self.bf.is_value(self.data[0]))
+        self.bf.add(self.data[0])
+        self.assertTrue(self.bf.is_value(self.data[0]))
 
     def test_multiple_items(self):
         for item in self.data:
@@ -32,6 +32,7 @@ class TestBloomFilter(unittest.TestCase):
     def test_nonexistent_item(self):
         self.bf.add(self.data[0])
         self.assertFalse(self.bf.is_value(self.data[1]))
+        self.assertTrue(self.bf.is_value(self.data[0]))
 
 
 if __name__ == "__main__":
