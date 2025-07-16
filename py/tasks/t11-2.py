@@ -1,4 +1,5 @@
 import unittest
+from itertools import product
 from typing import Callable, List
 
 from t11 import BloomFilter, hash1, hash2
@@ -72,6 +73,31 @@ class RemovableBloomFilter(BloomFilter):
     def remove(self, str1: str):
         for f in self.hash_fns:
             self.bit_array[f(str1)] = max(0, self.bit_array[f(str1)] - 1)
+
+
+# TASK: 1.11.4*
+# TITLE: Bloom filter elements reconstruction
+# TIME COMPLEXITY: O(p ^ n) where is power of alphabet (distinct symbols count, "abc" is 3 for instance)
+# SPACE COMPLEXITY: O(p ^ n) to store all the elements
+# REFLECTION:
+#   - 1. Let k = len(bloom_filter.hash_fns), m = bloom_filter.bit_array.bit_length(), k = 0,6931 * m / n
+#     Then n = m * 0.6931 / k
+#     2. For all possible ordered n repeatable combinations of values of str (0-9a-zA-Z, emoji etc.)
+#     check if given string of such combination is within bloom filter
+#   - Knowing beforehand what symbols we are after could significantly improve performance (for instance phone numbers)
+#   - Can be parallelized or ran with GPU since we are doing binary operations
+#   - TODO: 0.6931 is ln 2, check why
+# CODE:
+def reconstruct(bloom_filter: BloomFilter) -> List[str]:
+    result: List[str] = []
+    k = len(bloom_filter.hash_fns)
+    m = bloom_filter.bit_array.bit_length()
+    n = min(1, int(round(m * 0.6931) / k))
+    for chars in product("0123456789", repeat=n):
+        candidate = "".join(chars)
+        if bloom_filter.is_value(candidate):
+            result += candidate
+    return result
 
 
 class TestBloomFilter(unittest.TestCase):
