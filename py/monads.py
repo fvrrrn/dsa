@@ -12,12 +12,18 @@ class Maybe(Generic[T]):
 
 @dataclass(frozen=True)
 class Just(Maybe[T]):
+    def __bool__(self) -> bool:
+        return True
+
     value: T
 
 
 @dataclass(frozen=True)
 class Nothing(Maybe[T]):
     __match_args__ = ()  # TODO: not working: allow match-case to work cleanly
+
+    def __bool__(self) -> bool:
+        return False
 
 
 class Either(Generic[L, R]):
