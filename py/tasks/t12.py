@@ -89,7 +89,10 @@ class NativeCache(Generic[K, V]):
         maybe_index = self.dict.__contains__(key)
         match maybe_index:
             case Just(index):
-                self.dict.slots[index] += 1  # type: ignore
+                self.dict.values[index] = (
+                    self.dict.values[index][0],
+                    self.dict.values[index][1] + 1,
+                )
                 return Just(self.dict.values[index][0])  # type: ignore
             case _:
                 value = self.getter(key)
