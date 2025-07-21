@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Generic, TypeVar
+from typing import Generic, TypeGuard, TypeVar
 
 T = TypeVar("T")
 L = TypeVar("L")
@@ -16,6 +16,10 @@ class Just(Maybe[T]):
         return True
 
     value: T
+
+
+def is_just(m: Maybe[T]) -> TypeGuard[Just[T]]:
+    return isinstance(m, Just)
 
 
 @dataclass(frozen=True)

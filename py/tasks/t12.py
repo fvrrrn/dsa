@@ -1,15 +1,52 @@
 from math import gcd
-from typing import Callable, Generic, Hashable, Iterator, Protocol, Tuple, TypeVar, cast
+from typing import Callable, Generic, Hashable, Iterator, List, TypeVar, cast
 
 from monads import Just, Maybe, Nothing
 
 K = TypeVar("K", bound=Hashable)
 V = TypeVar("V")
-G = TypeVar("G", covariant=True)
 
 
-# TODO: use DynHashTable example when moving NativeDictionary to demonstration
-# that way __setitem__ is more likely to record element
+# TASK: 1.12.1 Native cache
+# TITLE: NativeCache with Least-Frequently-Used replacement
+# TIME COMPLEXITY:
+#   - __getitem__:
+#       O(n) if full (finds min)
+#       o(1) if load factor (s.length/s.capacity) is below certain value (which I don't know)
+#       Theta(1/(1-s.length/s.capacity) if hash function creates uniform distribution
+#       Omega(1) if no collision
+# SPACE COMPLEXITY:
+#   - O(n) where n = sz, includes slots, values, hits
+# REFLECTION:
+#   - with big hits it should be ordered array (or tree)
+#   - with small hits as is
+# CODE:
+class NativeCache(Generic[K, V]):
+    def __init__(self, sz, getter: Callable[[K], V], hasher: Callable[[K], int]):
+        self.size = sz
+        self.dict = NativeDictionary[K, V](sz, hasher)
+        self.hits: List[int] = [0] * sz
+        self.getter = getter
+
+    def __getitem__(self, key: K) -> Maybe[V]:
+        maybe_index = self.dict.__contains__(key)
+        match maybe_index:
+            case Just(index):
+                self.hits[index] += 1
+                return Just(self.dict.values[index])  # type: ignore
+            case _:
+                # assuming getter always returns value by key
+                value = self.getter(key)
+                match self.dict.put(key, value):
+                    case Nothing():
+                        index_min = min(
+                            range(len(self.hits)), key=self.hits.__getitem__
+                        )
+                        self.dict.slots[index_min] = key
+                        self.dict.values[index_min] = value
+                        return Just(value)
+                    case _:
+                        return Just(value)
 
 
 # Euler's totient function always returns at least 1 int if n > 1
@@ -41,20 +78,22 @@ class NativeDictionary(Generic[K, V]):
         for i in range(self.size // gcd(self.size, self.step)):
             yield (start + i * self.step) % self.size
 
-    def seek_slot(self, key: K) -> int | None:
+    def seek_slot(self, key: K) -> Maybe[int]:
         for index in self.__slots_iter(key):
             if self.slots[index] == None or self.slots[index] == key:
-                return index
-        return None
+                return Just(index)
+        return Nothing()
 
-    # TODO: add Maybe[int] after server tests
-    def put(self, key: K, value: V):
-        if (index := self.seek_slot(key)) is not None:
-            self.__size += self.slots[index] != key
-            # TODO: with dynamic resizing change step on each self.size change
-            self.slots[index] = key
-            self.values[index] = value
-            return index
+    def put(self, key: K, value: V) -> Maybe[int]:
+        match self.seek_slot(key):
+            case Just(index):
+                self.__size += self.slots[index] != key
+                # TODO: with dynamic resizing change step on each self.size change
+                self.slots[index] = key
+                self.values[index] = value
+                return Just(index)
+            case _:
+                return Nothing()
 
     def __contains__(self, key: K) -> Maybe[int]:
         for index in self.__slots_iter(key):
@@ -72,29 +111,8 @@ class NativeDictionary(Generic[K, V]):
     def __len__(self) -> int:
         return self.__size
 
-    def __setitem__(self, key: K, value: V) -> int | None:
+    def __setitem__(self, key: K, value: V) -> Maybe[int]:
         return self.put(key, value)
 
     def __getitem__(self, key: K) -> Maybe[V]:
         return self.get(key)
-
-
-class NativeCache(Generic[K, V]):
-    def __init__(self, sz, getter: Callable[[K], V], hasher: Callable[[K], int]):
-        self.size = sz
-        self.dict = NativeDictionary[K, Tuple[V, int]](sz, hasher)
-        self.getter = getter
-
-    def __getitem__(self, key: K) -> Maybe[V]:
-        maybe_index = self.dict.__contains__(key)
-        match maybe_index:
-            case Just(index):
-                self.dict.values[index] = (
-                    self.dict.values[index][0],
-                    self.dict.values[index][1] + 1,
-                )
-                return Just(self.dict.values[index][0])  # type: ignore
-            case _:
-                value = self.getter(key)
-                self.dict.put(key, (value, 0))
-                return Just(value)
